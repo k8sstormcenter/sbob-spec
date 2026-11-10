@@ -1,0 +1,395 @@
+spec_version: 0.1.0
+prefix: sbob
+legacy_prefixes:
+  - kubescape.io
+  - signature.kubescape.io
+api_groups:
+  current:
+    - profiles.sbob
+    - rules.sbob
+  legacy:
+    - spdx.softwarecomposition.kubescape.io
+    - kubescape.io
+kinds:
+  - kind: RuntimeProfile
+    group: profiles.sbob
+    subject_values: [container, host]
+    legacy_kind: ContainerProfile
+    legacy_group: spdx.softwarecomposition.kubescape.io
+  - kind: CollapseConfiguration
+    group: profiles.sbob
+    legacy_group: spdx.softwarecomposition.kubescape.io
+  - kind: SeccompProfile
+    group: profiles.sbob
+    legacy_group: spdx.softwarecomposition.kubescape.io
+  - kind: Rules
+    group: rules.sbob
+    legacy_group: kubescape.io
+  - kind: RuntimeRuleAlertBinding
+    group: rules.sbob
+    legacy_group: kubescape.io
+status_values: [initializing, ready, completed, failed, too-large, incomplete, missing-runtime]
+completion_values: [partial, complete]
+labels:
+  - key: sbob/user-defined-profile
+    legacy: kubescape.io/user-defined-profile
+    meaning: binding label on a Pod or Node naming the authored document
+  - key: sbob/profile-role
+    legacy: kubescape.io/profile-role
+    values: [shadow]
+    meaning: role of a learned document
+  - key: sbob/learning
+    legacy: kubescape.io/learning
+    meaning: legacy learning marker, inert for governance
+  - key: sbob/instance-template-hash
+    legacy: kubescape.io/instance-template-hash
+    meaning: workload template hash the learned document was recorded for
+  - key: sbob/host
+    legacy: kubescape.io/host
+    meaning: host document marker read by storage cleanup
+  - key: sbob/subject-type
+    legacy: kubescape.io/sbom-type
+    values: [container, node]
+    meaning: legacy identity of a host document, replaced by the subject field
+  - key: sbob/profile-fragment
+    legacy: kubescape.io/profile-fragment
+    meaning: fragment marker on an authored container document
+  - key: sbob/host-fragment
+    legacy: kubescape.io/host-fragment
+    meaning: fragment class marker on an authored host document
+  - key: sbob/host-fragment-base
+    legacy: kubescape.io/host-fragment-base
+    meaning: reference to the base fragment of a host document
+  - key: sbob/bundle
+    legacy: signature.kubescape.io/bundle
+    meaning: bundle a signed fragment belongs to
+  - key: sbob/fragment-class
+    legacy: signature.kubescape.io/fragment-class
+    values: [base, admission, overlay]
+    meaning: class of a signed fragment
+  - key: sbob/version
+    legacy: signature.kubescape.io/version
+    meaning: monotonic version of a signed fragment
+  - key: sbob/generator
+    legacy: signature.kubescape.io/generator
+    meaning: tool that produced the document
+  - key: sbob/generator-ref
+    legacy: signature.kubescape.io/generator-ref
+    meaning: revision of the tool that produced the document
+  - key: sbob/matcher-version
+    legacy: signature.kubescape.io/matcher-version
+    meaning: grammar version the document was authored against
+  - key: sbob/ignore
+    legacy: kubescape.io/ignore
+    meaning: namespace or workload excluded from tracing
+  - key: sbob/tier
+    legacy: kubescape.io/tier
+    values: [core]
+    meaning: namespace tier label of the operator's own namespace
+  - key: sbob/infra
+    legacy: kubescape.io/infra
+    meaning: infrastructure namespace marker
+  - key: sbob/namespace
+    legacy: kubescape.io/namespace
+    meaning: namespace marker written by the chart
+  - key: sbob/node-group
+    legacy: kubescape.io/node-group
+    meaning: node group a host document template applies to
+  - key: sbob/canary
+    legacy: kubescape.io/canary
+    meaning: canary workload marker of the standing live check
+  - key: sbob/user-defined-network
+    legacy: kubescape.io/user-defined-network
+    meaning: legacy binding label of a network document, retired with the merged document
+annotations:
+  - key: sbob/spec-version
+    legacy: sbob.io/spec-version
+    meaning: specification version the document conforms to
+  - key: sbob/status
+    legacy: kubescape.io/status
+    values_ref: status_values
+    meaning: learning status of a learned document
+  - key: sbob/completion
+    legacy: kubescape.io/completion
+    values_ref: completion_values
+    meaning: completion of a learned document
+  - key: sbob/managed-by
+    legacy: kubescape.io/managed-by
+    values: [User]
+    meaning: an authored document; annotation only, exact value
+  - key: sbob/workload-kind
+    legacy: kubescape.io/workload-kind
+  - key: sbob/workload-name
+    legacy: kubescape.io/workload-name
+  - key: sbob/workload-namespace
+    legacy: kubescape.io/workload-namespace
+  - key: sbob/workload-container-name
+    legacy: kubescape.io/workload-container-name
+  - key: sbob/workload-container-type
+    legacy: kubescape.io/workload-container-type
+  - key: sbob/workload-resource-version
+    legacy: kubescape.io/workload-resource-version
+  - key: sbob/instance-id
+    legacy: kubescape.io/instance-id
+  - key: sbob/wlid
+    legacy: kubescape.io/wlid
+    meaning: workload identifier string; replaced by the identity fields
+  - key: sbob/image-id
+    legacy: kubescape.io/image-id
+  - key: sbob/image-tag
+    legacy: kubescape.io/image-tag
+  - key: sbob/image-name
+    legacy: kubescape.io/image-name
+  - key: sbob/report-timestamp
+    legacy: kubescape.io/report-timestamp
+  - key: sbob/previous-report-timestamp
+    legacy: kubescape.io/previous-report-timestamp
+  - key: sbob/report-series-id
+    legacy: kubescape.io/report-series-id
+  - key: sbob/resource-size
+    legacy: kubescape.io/resource-size
+  - key: sbob/sync-checksum
+    legacy: kubescape.io/sync-checksum
+  - key: sbob/deflate-checksum
+    legacy: kubescape.io/deflate-checksum
+  - key: sbob/tool-version
+    legacy: kubescape.io/tool-version
+  - key: sbob/max-sniffing-time
+    legacy: kubescape.io/max-sniffing-time
+  - key: sbob/persisted
+    legacy: kubescape.io/persisted
+  - key: sbob/residual-stamp
+    legacy: kubescape.io/residual-stamp
+  - key: sbob/last-update
+    legacy: kubescape.io/last-update
+  - key: sbob/last-checked
+    legacy: kubescape.io/last-checked
+  - key: sbob/otel-traceparent
+    legacy: kubescape.io/otel-traceparent
+  - key: sbob/otel-span-id
+    legacy: kubescape.io/otel-span-id
+  - key: sbob/bundle-manifest
+    legacy: signature.kubescape.io/bundle-manifest
+    meaning: the bundle manifest a signed fragment commits to
+  - key: sbob/content
+    legacy: signature.kubescape.io/content
+    meaning: signed content of a fragment
+  - key: sbob/signature
+    legacy: signature.kubescape.io/signature
+  - key: sbob/certificate
+    legacy: signature.kubescape.io/certificate
+  - key: sbob/identity
+    legacy: signature.kubescape.io/identity
+    meaning: signer identity of a signed fragment
+  - key: sbob/issuer
+    legacy: signature.kubescape.io/issuer
+    meaning: issuer of the signer identity
+  - key: sbob/timestamp
+    legacy: signature.kubescape.io/timestamp
+    meaning: signing time of a fragment
+  - key: sbob/workload-api-group
+    legacy: kubescape.io/workload-api-group
+  - key: sbob/workload-api-version
+    legacy: kubescape.io/workload-api-version
+image_labels:
+  - sbob/spec-version
+  - sbob/library-version
+retired:
+  - legacy: kubescape.io/context
+    reason: software bill of materials, pending
+  - legacy: kubescape.io/node-name
+    reason: software bill of materials, pending
+  - legacy: kubescape.io/scanner-memory-limit
+    reason: software bill of materials, pending
+  - legacy: kubescape.io/cloud-account-identifier
+    reason: vendor backend
+  - legacy: kubescape.io/region
+    reason: vendor backend
+  - legacy: kubescape.io/cluster
+    reason: vendor backend
+  - legacy: kubescape.io/host-id
+    reason: vendor backend
+  - legacy: kubescape.io/host-type
+    reason: vendor backend
+  - legacy: kubescape.io/artifact-type
+    reason: vendor backend
+rule_functions:
+  - cp.is_domain_in_egress
+  - cp.is_domain_in_ingress
+  - cp.is_host_peer_egress
+  - cp.is_host_peer_ingress
+  - cp.was_address_in_egress
+  - cp.was_address_in_ingress
+  - cp.was_address_port_protocol_in_egress
+  - cp.was_address_port_protocol_in_ingress
+  - cp.was_address_port_protocol_resolved_from_egress_domain
+  - cp.was_address_resolved_from_egress_domain
+  - cp.was_capability_used
+  - cp.was_endpoint_accessed
+  - cp.was_endpoint_accessed_with_direction
+  - cp.was_endpoint_accessed_with_header
+  - cp.was_endpoint_accessed_with_header_value
+  - cp.was_endpoint_accessed_with_method
+  - cp.was_endpoint_accessed_with_methods
+  - cp.was_endpoint_accessed_with_prefix
+  - cp.was_endpoint_accessed_with_suffix
+  - cp.was_executed
+  - cp.was_executed_with_args
+  - cp.was_external_endpoint_accessed
+  - cp.was_host_accessed
+  - cp.was_internal_endpoint_accessed
+  - cp.was_path_opened
+  - cp.was_path_opened_with_flags
+  - cp.was_path_opened_with_prefix
+  - cp.was_path_opened_with_suffix
+  - cp.was_selector_in_egress
+  - cp.was_selector_in_ingress
+  - cp.was_syscall_used
+rules:
+  - name: process-execution
+    section: execs[].path
+    engine_id: R0001
+    event: exec
+  - name: process-arguments
+    section: execs[].args
+    engine_id: R0040
+    event: exec
+  - name: file-access
+    section: opens[].path
+    engine_id: R0002
+    event: open
+  - name: domain-communication
+    section: egress[].dnsNames
+    engine_id: R0005
+    event: dns
+  - name: egress-traffic
+    section: egress[]
+    engine_id: R0011
+    event: network
+  - name: ingress-traffic
+    section: ingress[]
+    engine_id: R0012
+    event: network
+  - name: syscall-use
+    section: syscalls
+    engine_id: R0003
+    event: syscall
+    proposed: true
+  - name: capability-use
+    section: capabilities
+    engine_id: R0004
+    event: capabilities
+    proposed: true
+  - name: binary-not-in-image
+    section: rulePolicies
+    engine_id: R1001
+    event: exec
+  - name: execution-from-memory
+    section: rulePolicies
+    engine_id: R1005
+    event: exec
+  - name: execution-from-shared-memory
+    section: rulePolicies
+    engine_id: R1000
+    event: exec
+  - name: sensitive-file-access
+    section: rulePolicies
+    engine_id: R0010
+    event: open
+  - name: link-over-sensitive-file
+    section: rulePolicies
+    engine_id: R1010
+    engine_ids: [R1012]
+    event: symlink, hardlink
+  - name: service-account-token-access
+    section: rulePolicies
+    engine_id: R0006
+    event: open
+  - name: procfs-environment-read
+    section: rulePolicies
+    engine_id: R0008
+    event: open
+  - name: kubernetes-api-access
+    section: rulePolicies
+    engine_id: R0007
+    event: exec, network
+  - name: module-load
+    section: rulePolicies
+    engine_id: R1002
+    event: kmod
+  - name: ebpf-program-load
+    section: rulePolicies
+    engine_id: R0009
+    event: bpf
+  - name: namespace-change
+    section: rulePolicies
+    engine_id: R1006
+    event: unshare
+  - name: process-tracing
+    section: rulePolicies
+    engine_id: R1015
+    event: ptrace
+  - name: dynamic-linker-hook
+    section: rulePolicies
+    engine_id: R1011
+    event: exec, open
+  - name: ssh-connection
+    section: rulePolicies
+    engine_id: R1003
+    event: ssh
+  - name: cgroup-release-agent-write
+    section: rulePolicies
+    engine_id: null
+  - name: stdio-to-socket
+    section: rulePolicies
+    engine_id: null
+  - name: process-from-mount
+    section: rulePolicies
+    engine_id: R1004
+    event: exec
+    proposed: true
+  - name: crypto-miner-launched
+    section: rulePolicies
+    engine_id: R1007
+    event: randomx
+    proposed: true
+  - name: crypto-mining-domain
+    section: rulePolicies
+    engine_id: R1008
+    event: dns
+    proposed: true
+  - name: crypto-mining-port
+    section: rulePolicies
+    engine_id: R1009
+    event: network
+    proposed: true
+  - name: signed-profile-tampered
+    section: trust
+    engine_id: R1016
+    proposed: true
+  - name: uncovered-container
+    section: trust
+    engine_id: R1017
+    proposed: true
+  - name: unsigned-profile-governs
+    section: trust
+    engine_id: R1018
+    proposed: true
+  - name: io-uring-operation
+    section: rulePolicies
+    engine_id: R1030
+    event: iouring
+    proposed: true
+  - name: kubelet-exec-request
+    section: rulePolicies
+    engine_id: R1031
+    proposed: true
+  - name: dns-exfiltration
+    section: rulePolicies
+    engine_id: R1032
+    event: dns
+    proposed: true
+  - name: exec-to-pod
+    section: rulePolicies
+    engine_id: R2000
+    proposed: true

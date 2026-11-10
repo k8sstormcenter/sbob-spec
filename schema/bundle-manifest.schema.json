@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sbob/schema/bundle-manifest",
+  "title": "Bundle manifest",
+  "type": "object",
+  "required": ["root", "leaves"],
+  "properties": {
+    "root": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "hex Merkle root over the leaves in manifest order"},
+    "leaves": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["class", "signer", "name", "contentDigest", "version"],
+        "properties": {
+          "class": {"type": "string", "enum": ["base", "admission", "overlay"]},
+          "signer": {"type": "string"},
+          "name": {"type": "string"},
+          "contentDigest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "version": {"type": "integer", "minimum": 0}
+        }
+      }
+    }
+  }
+}

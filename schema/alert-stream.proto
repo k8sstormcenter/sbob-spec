@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package nodeagent.direct.v1;
+
+option go_package = "github.com/k8sstormcenter/nodeagent-direct-api/nodeagent/direct/v1;directv1";
+
+service AlertStream {
+  rpc Subscribe(SubscribeRequest) returns (stream AlertBatch);
+  rpc SubscribeProfiles(SubscribeRequest) returns (stream ProfileSnapshotBatch);
+  rpc AckSnapshots(AckRequest) returns (AckResponse);
+}
+
+message SubscribeRequest {
+  uint64 since_seq = 1;
+  uint32 max_batch = 2;
+  string producer_epoch = 3;
+}
+
+message AlertBatch {
+  uint64 oldest_seq = 1;
+  uint64 newest_seq = 2;
+  bool gap = 3;
+  uint64 dropped_since_last = 4;
+  int64 sent_at_ns = 5;
+  string node_agent_version = 6;
+  repeated Alert alerts = 7;
+  string producer_epoch = 8;
+}
+
+message Alert {
+  uint64 seq = 1;
+  string hostname = 2;
+  int64 event_time_ns = 3;
+  string rule_id = 4;
+  string message = 5;
+  bytes base_runtime_metadata = 6;
+  bytes runtime_k8s_details = 7;
+  bytes runtime_process_details = 8;
+  bytes cloud_metadata = 9;
+  string mitre_tactic = 10;
+  string mitre_technique = 11;
+  reserved 12;
+  reserved "rule_version";
+}
+
+message ProfileSnapshot {
+  uint64 seq = 1;
+  string hostname = 2;
+  string producer_epoch = 3;
+  string namespace = 4;
+  string profile_name = 5;
+  string chunk_name = 6;
+  string series_id = 7;
+  int64 report_time_ns = 8;
+  int64 prev_report_time_ns = 9;
+  string status = 10;
+  string completion = 11;
+  string profile_kind = 12;
+  bytes spec = 13;
+  bytes spec_sha256 = 14;
+  uint32 entry_count = 15;
+  map<string, string> labels = 16;
+  string instance_id = 17;
+  string wlid = 18;
+}
+
+message ProfileSnapshotBatch {
+  repeated ProfileSnapshot snapshots = 1;
+  uint64 oldest_seq = 2;
+  uint64 newest_seq = 3;
+  bool gap = 4;
+  uint64 dropped_since_last = 5;
+  int64 sent_at_ns = 6;
+  string producer_epoch = 7;
+  string node_agent_version = 8;
+}
+
+message AckRequest {
+  string hostname = 1;
+  string producer_epoch = 2;
+  uint64 upto_seq = 3;
+}
+
+message AckResponse {
+  uint64 acked_upto_seq = 1;
+  string producer_epoch = 2;
+}
