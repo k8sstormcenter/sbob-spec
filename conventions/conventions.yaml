@@ -192,8 +192,10 @@ annotations:
   - key: sbob/workload-api-version
     legacy: kubescape.io/workload-api-version
 image_labels:
-  - sbob/spec-version
-  - sbob/library-version
+  - key: sbob.spec-version
+    meaning: specification version the image implements; OCI label keys take dots, not slashes
+  - key: sbob.library-version
+    meaning: version of the reference library the image was built against
 retired:
   - legacy: kubescape.io/context
     reason: software bill of materials, pending
