@@ -10,7 +10,8 @@ Tokens: `⋯` (one path segment, or one argument, or one embedded segment), `*` 
 
 - §5.3 is corrected: `⋯` inside arguments matches exactly one argument or one embedded segment; `⋯⋯` matches zero or more arguments; `⋯⋯` inside a token matches one or more segments. §4.5 was right.
 - The bare `*` is the any-sentinel for capabilities, syscalls and dnsNames, accepted by admission and by the verifier alike, consistent with §5.7 for IP addresses.
-- Basename comparison of argv0 is part of the contract.
+- Basename comparison of argv0 is part of the contract: the recorded and the invoked name match when their last path elements are equal; an empty name matches nothing; a multiplexer binary is not its applet.
+- The reference matcher implements the four rulings above as of 2026-11-10 (corpus sections `execNames` and `sentinels`), and admission accepts a lone `*` in a DNS list.
 
 ## Pinned by
 
