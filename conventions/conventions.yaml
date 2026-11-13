@@ -216,6 +216,7 @@ retired:
   - legacy: kubescape.io/artifact-type
     reason: vendor backend
 rule_functions:
+  - cp.is_dns_answer_in_egress
   - cp.is_domain_in_egress
   - cp.is_domain_in_ingress
   - cp.is_host_peer_egress
@@ -264,6 +265,11 @@ rules:
     section: egress[].dnsNames
     engine_id: R0005
     event: dns
+  - name: dns-answer-address
+    section: egress[].ipAddresses
+    engine_id: R0013
+    event: dns
+    proposed: true
   - name: egress-traffic
     section: egress[]
     engine_id: R0011
