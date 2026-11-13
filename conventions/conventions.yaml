@@ -13,9 +13,13 @@ api_groups:
 kinds:
   - kind: RuntimeProfile
     group: profiles.sbob
+    version: v1beta1
+    resource: runtimeprofiles
     subject_values: [container, host]
     legacy_kind: ContainerProfile
     legacy_group: spdx.softwarecomposition.kubescape.io
+    legacy_version: v1beta1
+    legacy_resource: containerprofiles
   - kind: CollapseConfiguration
     group: profiles.sbob
     legacy_group: spdx.softwarecomposition.kubescape.io
@@ -25,9 +29,13 @@ kinds:
   - kind: Rules
     group: rules.sbob
     legacy_group: kubescape.io
+    legacy_version: v1
+    legacy_resource: rules
   - kind: RuntimeRuleAlertBinding
     group: rules.sbob
     legacy_group: kubescape.io
+    legacy_version: v1
+    legacy_resource: runtimerulealertbindings
 status_values: [initializing, ready, completed, failed, too-large, incomplete, missing-runtime]
 completion_values: [partial, complete]
 labels:
@@ -36,8 +44,8 @@ labels:
     meaning: binding label on a Pod or Node naming the authored document
   - key: sbob/profile-role
     legacy: kubescape.io/profile-role
-    values: [shadow]
-    meaning: role of a learned document
+    values: [shadow, suggestion]
+    meaning: role of a learned document or of a proposal computed from one
   - key: sbob/learning
     legacy: kubescape.io/learning
     meaning: legacy learning marker, inert for governance
@@ -101,6 +109,21 @@ labels:
   - key: sbob/user-defined-network
     legacy: kubescape.io/user-defined-network
     meaning: legacy binding label of a network document, retired with the merged document
+  - key: sbob/suggested-from
+    legacy: kubescape.io/suggested-from
+    meaning: learned document a proposal was computed from
+  - key: sbob/delta-of
+    legacy: kubescape.io/delta-of
+    meaning: authored document or bundle a proposed fragment adds to
+  - key: sbob/peer-namespace
+    legacy: kubescape.io/peer-namespace
+    meaning: namespace of the client workload a proposed ingress fragment admits
+  - key: sbob/peer-workload
+    legacy: kubescape.io/peer-workload
+    meaning: client workload a proposed ingress fragment admits
+  - key: sbob/suggest-bundle
+    legacy: kubescape.io/suggest-bundle
+    meaning: bundle a pod asks its proposals to be made for; read from the pod as a label, then as an annotation
 annotations:
   - key: sbob/spec-version
     legacy: sbob.io/spec-version
@@ -191,6 +214,44 @@ annotations:
     legacy: kubescape.io/workload-api-group
   - key: sbob/workload-api-version
     legacy: kubescape.io/workload-api-version
+  - key: sbob/timeline
+    legacy: kubescape.io/timeline
+    meaning: governance transitions of the recorded container, written by the agent and kept by storage across updates
+  - key: sbob/suggest-request
+    legacy: kubescape.io/suggest-request
+    meaning: request identifier a pod asks a proposal with, carried onto the proposal
+  - key: sbob/suggest-kind
+    legacy: kubescape.io/suggest-kind
+    values: [full, delta]
+    meaning: kind of proposal a pod asks for
+  - key: sbob/suggestion-sha256
+    legacy: kubescape.io/suggestion-sha256
+    meaning: digest of the proposed content, compared before a proposal is rewritten
+  - key: sbob/suggestion-source-rv
+    legacy: kubescape.io/suggestion-source-rv
+    meaning: resource version of the learned document a proposal was computed from
+  - key: sbob/suggestion-version
+    legacy: kubescape.io/suggestion-version
+    meaning: counter raised each time the content of a proposal changes
+  - key: sbob/created-by
+    legacy: kubescape.io/created-by
+    meaning: component that wrote a proposal
+  - key: sbob/expires-at
+    legacy: kubescape.io/expires-at
+    meaning: time after which an unaccepted proposal is withdrawn, RFC 3339
+  - key: sbob/evidence
+    legacy: kubescape.io/evidence
+    values: [client, shadow, both]
+    meaning: where the traffic behind a proposed ingress fragment was seen, at the client, in the learned document of the target, or both
+  - key: sbob/peer-self
+    legacy: kubescape.io/peer-self
+    meaning: the client of a proposed ingress fragment is the workload itself
+  - key: sbob/delta-base-only
+    legacy: kubescape.io/delta-base-only
+    meaning: sections in which the learned document holds values the governing one lacks and that a proposed overlay fragment leaves to the base fragment, comma separated
+  - key: sbob/rekor-bundle
+    legacy: signature.kubescape.io/rekor-bundle
+    meaning: transparency log bundle of a signed fragment
 image_labels:
   - key: sbob.spec-version
     meaning: specification version the image implements; OCI label keys take dots, not slashes
