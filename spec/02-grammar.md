@@ -292,9 +292,9 @@ Name rules apply to `dnsNames[]` and to the singular `dns`.
 **2.6.8** A list MUST match an observation when any entry matches it. An empty list and an empty observation MUST match nothing.
 
 ```yaml example:dns
-entries: [api.stripe.com.]
-match: [api.stripe.com., api.stripe.com, API.Stripe.COM.]
-nomatch: [v1.api.stripe.com., stripe.com.]
+entries: [api.example.com.]
+match: [api.example.com., api.example.com, API.Example.COM.]
+nomatch: [v1.api.example.com., example.com.]
 ```
 
 ```yaml example:dns
@@ -422,7 +422,7 @@ A document section lists what is admitted (the allow section). The `subtract` se
 surface: exec
 allow: [{path: /usr/bin/getent, args: [/usr/bin/getent, hosts, ⋯]}]
 subtract: [{path: /usr/bin/getent, args: [/usr/bin/getent, hosts, scan.example.invalid]}]
-admitted: [{path: /usr/bin/getent, args: [/usr/bin/getent, hosts, github.com]}]
+admitted: [{path: /usr/bin/getent, args: [/usr/bin/getent, hosts, repo.example.org]}]
 denied: [{path: /usr/bin/getent, args: [/usr/bin/getent, hosts, scan.example.invalid]}]
 ```
 
@@ -468,9 +468,9 @@ denied: [{path: /home/runner/.config/user/agent.py}]
 
 ```yaml example:subtract
 surface: domain
-allow: [{name: github.com.}, {name: "*.example.invalid."}]
+allow: [{name: repo.example.org.}, {name: "*.example.invalid."}]
 subtract: [{name: scan.example.invalid.}]
-admitted: [{name: github.com.}, {name: api.example.invalid.}]
+admitted: [{name: repo.example.org.}, {name: api.example.invalid.}]
 denied: [{name: scan.example.invalid.}]
 ```
 
