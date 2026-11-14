@@ -1,7 +1,104 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sbob/schema/behaviour-document",
-  "title": "Behaviour document (ContainerProfile shape of spec v0.0.4, served as RuntimeProfile from spec v0.2)",
+  "title": "Behaviour document: RuntimeProfile, and the legacy ContainerProfile form",
+  "description": "A RuntimeProfile (apiVersion profiles.sbob/<version>, kind RuntimeProfile, with a subject) or its legacy form (apiVersion spdx.softwarecomposition.kubescape.io/<version>, kind ContainerProfile, without a subject). Both forms share the spec shapes; chapter 1 of the specification defines them.",
+  "type": "object",
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata"
+  ],
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "description": "profiles.sbob/<version>; legacy: spdx.softwarecomposition.kubescape.io/<version>"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "RuntimeProfile",
+        "ContainerProfile"
+      ],
+      "description": "ContainerProfile is the legacy kind (1.8)"
+    },
+    "metadata": {
+      "$ref": "#/$defs/k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "subject": {
+      "type": "string",
+      "enum": [
+        "container",
+        "host"
+      ],
+      "description": "what the document describes (1.1.3); absent in the legacy form"
+    },
+    "spec": {
+      "default": {},
+      "$ref": "#/$defs/ContainerProfileSpec"
+    },
+    "status": {
+      "default": {},
+      "$ref": "#/$defs/ContainerProfileStatus"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "RuntimeProfile"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "subject"
+        ],
+        "properties": {
+          "apiVersion": {
+            "pattern": "^profiles\\.sbob/.+$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "ContainerProfile"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "not": {
+          "required": [
+            "subject"
+          ]
+        },
+        "properties": {
+          "apiVersion": {
+            "pattern": "^spdx\\.softwarecomposition\\.kubescape\\.io/.+$"
+          }
+        }
+      }
+    }
+  ],
   "$defs": {
     "Arg": {
       "description": "Arg defines the specific syscall in seccomp.",
@@ -67,78 +164,145 @@
       }
     },
     "ContainerProfileContainer": {
-      "description": "ContainerProfileContainer is one container's profile inside a user-authored multi-container ContainerProfile document: the union of the legacy ApplicationProfileContainer and NetworkNeighborhoodContainer shapes.",
       "type": "object",
-      "required": [
-        "name"
-      ],
       "properties": {
         "capabilities": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string",
             "default": ""
           }
         },
         "egress": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/NetworkNeighbor"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/NetworkNeighbor"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "endpoints": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/HTTPEndpoint"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/HTTPEndpoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "x-kubernetes-patch-merge-key": "endpoint",
           "x-kubernetes-patch-strategy": "merge"
         },
         "execs": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/ExecCalls"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ExecCalls"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "x-kubernetes-list-type": "atomic"
         },
         "identifiedCallStacks": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/IdentifiedCallStack"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/IdentifiedCallStack"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "imageID": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "imageTag": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ingress": {
-          "description": "WARNING report the network fields here, increment proto IDs by 100",
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/NetworkNeighbor"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/NetworkNeighbor"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "name": {
           "type": "string",
-          "default": ""
+          "minLength": 1
         },
         "opens": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/OpenCalls"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/OpenCalls"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "x-kubernetes-list-type": "atomic"
         },
         "rulePolicies": {
-          "type": "object",
+          "type": [
+            "object",
+            "null"
+          ],
           "additionalProperties": {
             "default": {},
             "$ref": "#/$defs/RulePolicy"
@@ -148,153 +312,274 @@
         },
         "seccompProfile": {
           "default": {},
-          "$ref": "#/$defs/SingleSeccompProfile"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SingleSeccompProfile"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "subtract": {
-          "$ref": "#/$defs/ContainerProfileSubtract"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContainerProfileSubtract"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "syscalls": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string",
             "default": ""
           }
         }
-      }
+      },
+      "description": "A per-container section of a grouped document (1.5).",
+      "required": [
+        "name"
+      ]
     },
     "ContainerProfileSpec": {
       "type": "object",
-      "required": [
-        "architectures",
-        "capabilities",
-        "execs",
-        "opens",
-        "syscalls",
-        "endpoints",
-        "imageID",
-        "imageTag",
-        "rulePolicies",
-        "identifiedCallStacks",
-        "ingress",
-        "egress"
-      ],
       "properties": {
         "architectures": {
-          "description": "WARNING report the execution/profile fields here",
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string",
             "default": ""
           }
         },
         "capabilities": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string",
             "default": ""
           }
         },
         "containers": {
-          "description": "Container subtype groups for user-authored multi-container documents. One authored ContainerProfile per pod can describe every container, keyed by name within its subtype group - the same contract the legacy ApplicationProfile/NetworkNeighborhood specs expressed. Learned (agent-written) profiles stay one object per container and leave these empty.",
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/ContainerProfileContainer"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ContainerProfileContainer"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "x-kubernetes-patch-merge-key": "name",
           "x-kubernetes-patch-strategy": "merge"
         },
         "egress": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/NetworkNeighbor"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/NetworkNeighbor"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "endpoints": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/HTTPEndpoint"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/HTTPEndpoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "x-kubernetes-patch-merge-key": "endpoint",
           "x-kubernetes-patch-strategy": "merge"
         },
         "ephemeralContainers": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/ContainerProfileContainer"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ContainerProfileContainer"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "x-kubernetes-patch-merge-key": "name",
           "x-kubernetes-patch-strategy": "merge"
         },
         "execs": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/ExecCalls"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ExecCalls"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "x-kubernetes-list-type": "atomic"
         },
         "identifiedCallStacks": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/IdentifiedCallStack"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/IdentifiedCallStack"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "imageID": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "default": ""
         },
         "imageTag": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "default": ""
         },
         "ingress": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/NetworkNeighbor"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/NetworkNeighbor"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "initContainers": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/ContainerProfileContainer"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ContainerProfileContainer"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "x-kubernetes-patch-merge-key": "name",
           "x-kubernetes-patch-strategy": "merge"
         },
         "matchExpressions": {
-          "description": "matchExpressions is a list of label selector requirements. The requirements are ANDed.",
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/k8s.apimachinery.pkg.apis.meta.v1.LabelSelectorRequirement"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/k8s.apimachinery.pkg.apis.meta.v1.LabelSelectorRequirement"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "x-kubernetes-list-type": "atomic"
         },
         "matchLabels": {
-          "description": "matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed.",
-          "type": "object",
+          "type": [
+            "object",
+            "null"
+          ],
           "additionalProperties": {
             "type": "string",
             "default": ""
           }
         },
         "opens": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/OpenCalls"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/OpenCalls"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "x-kubernetes-list-type": "atomic"
         },
         "rulePolicies": {
-          "type": "object",
+          "type": [
+            "object",
+            "null"
+          ],
           "additionalProperties": {
             "default": {},
             "$ref": "#/$defs/RulePolicy"
@@ -304,19 +589,37 @@
         },
         "seccompProfile": {
           "default": {},
-          "$ref": "#/$defs/SingleSeccompProfile"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SingleSeccompProfile"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "subtract": {
-          "$ref": "#/$defs/ContainerProfileSubtract"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContainerProfileSubtract"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "syscalls": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string",
             "default": ""
           }
         }
-      }
+      },
+      "description": "The behaviour sections of a document (chapter 1, 1.3). Shared by RuntimeProfile and the legacy ContainerProfile."
     },
     "ContainerProfileStatus": {
       "type": "object"
@@ -325,114 +628,210 @@
       "type": "object",
       "properties": {
         "capabilities": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string",
             "default": ""
           }
         },
         "egress": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/NetworkNeighbor"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/NetworkNeighbor"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "endpoints": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/HTTPEndpoint"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/HTTPEndpoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "x-kubernetes-patch-merge-key": "endpoint",
           "x-kubernetes-patch-strategy": "merge"
         },
         "execs": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/ExecCalls"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ExecCalls"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "x-kubernetes-list-type": "atomic"
         },
         "ingress": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/NetworkNeighbor"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/NetworkNeighbor"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "opens": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/OpenCalls"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/OpenCalls"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "x-kubernetes-list-type": "atomic"
         },
         "syscalls": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string",
             "default": ""
           }
         }
-      }
+      },
+      "description": "The subtract section (1.6)."
     },
     "ExecCalls": {
       "type": "object",
       "properties": {
         "args": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string",
             "default": ""
           }
         },
         "argsRequired": {
-          "description": "ArgsRequired declares the intent of Args explicitly. When false (default and the back-compat path) the Args vector is informational and CompareExecArgs's empty-bypass applies. When true the Args vector is a strict constraint enforced by MatchExecArgs \u2014 an empty Args means \"argv MUST be empty\"; a non-empty Args is matched anchored (wildcard tokens still apply). Resolves the args,omitempty / explicit-empty round-trip ambiguity that CompareExecArgs alone could not express.",
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "envs": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string",
             "default": ""
           }
         },
         "path": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
-      }
+      },
+      "description": "An exec entry (1.4).",
+      "required": [
+        "path"
+      ]
     },
     "HTTPEndpoint": {
       "type": "object",
-      "required": [
-        "internal"
-      ],
       "properties": {
         "direction": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "inbound",
+            "outbound",
+            null
+          ]
         },
         "endpoint": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "headers": {
-          "type": "object",
-          "x-kubernetes-preserve-unknown-fields": true
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
         },
         "internal": {
-          "type": "boolean",
+          "type": [
+            "boolean",
+            "null"
+          ],
           "default": false
         },
         "methods": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string",
             "default": ""
           }
         }
-      }
+      },
+      "description": "An endpoint entry (1.4)."
     },
     "IdentifiedCallStack": {
       "type": "object",
@@ -452,116 +851,161 @@
       }
     },
     "NetworkNeighbor": {
-      "description": "NetworkNeighbor represents a single network communication made by this resource.",
       "type": "object",
-      "required": [
-        "identifier",
-        "type",
-        "dns",
-        "dnsNames",
-        "ports",
-        "podSelector",
-        "namespaceSelector",
-        "ipAddress"
-      ],
       "properties": {
         "dns": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "default": ""
         },
         "dnsNames": {
-          "description": "DEPRECATED - use DNSNames instead.",
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string",
             "default": ""
           }
         },
         "entity": {
-          "description": "Entity is a reserved peer identity not backed by a Service object. Supported value: \"host\" (node InternalIP + CNI gateway) \u2014 kubelet/health probes and node-sourced traffic.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "identifier": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "default": ""
         },
         "ipAddress": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "default": ""
         },
         "ipAddresses": {
-          "description": "IPAddresses is the v0.0.2 list-form replacement for IPAddress. Each entry MAY be a literal IP, a CIDR (a.b.c.d/n), or the \"*\" sentinel. See pkg/registry/file/networkmatch for matcher semantics.",
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string",
             "default": ""
           }
         },
         "namespaceSelector": {
-          "$ref": "#/$defs/k8s.apimachinery.pkg.apis.meta.v1.LabelSelector"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/k8s.apimachinery.pkg.apis.meta.v1.LabelSelector"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "podSelector": {
-          "$ref": "#/$defs/k8s.apimachinery.pkg.apis.meta.v1.LabelSelector"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/k8s.apimachinery.pkg.apis.meta.v1.LabelSelector"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "ports": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/NetworkPort"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/NetworkPort"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "x-kubernetes-patch-merge-key": "name",
           "x-kubernetes-patch-strategy": "merge"
         },
         "serviceRefName": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "serviceRefNamespace": {
-          "description": "ServiceRefNamespace and ServiceRefName reference a single Service; the resolver expands it to that Service's ClusterIP(s) and backing endpoint IPs. Portable (a name, resolved per-cluster) and narrow, unlike a serviceCIDR ipAddresses entry. See k8sstormcenter/node-agent#92.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "serviceSelector": {
-          "description": "ServiceSelector selects Services by label, resolved like ServiceRef.",
-          "$ref": "#/$defs/k8s.apimachinery.pkg.apis.meta.v1.LabelSelector"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/k8s.apimachinery.pkg.apis.meta.v1.LabelSelector"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "type": {
-          "description": "A unique identifier for this entry",
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "default": ""
         }
-      }
+      },
+      "description": "A network entry of ingress or egress (1.4)."
     },
     "NetworkPort": {
       "type": "object",
-      "required": [
-        "name",
-        "protocol",
-        "port"
-      ],
       "properties": {
         "name": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "default": ""
         },
         "port": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "format": "int32"
         },
         "protocol": {
-          "description": "protocol-port",
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "default": ""
         }
-      }
+      },
+      "description": "A port of a network entry (1.4, 2.7)."
     },
     "OpenCalls": {
       "type": "object",
-      "required": [
-        "path",
-        "flags"
-      ],
       "properties": {
         "flags": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string",
             "default": ""
@@ -569,18 +1013,28 @@
         },
         "path": {
           "type": "string",
-          "default": ""
+          "minLength": 1
         }
-      }
+      },
+      "description": "An open entry (1.4).",
+      "required": [
+        "path"
+      ]
     },
     "RulePolicy": {
       "type": "object",
       "properties": {
         "containerAllowed": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "processAllowed": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string",
             "default": ""
@@ -588,7 +1042,8 @@
           "x-kubernetes-list-type": "atomic",
           "x-kubernetes-patch-strategy": "merge"
         }
-      }
+      },
+      "description": "A rule policy (1.4, 6.7)."
     },
     "SingleSeccompProfile": {
       "type": "object",
@@ -724,16 +1179,29 @@
       "properties": {
         "matchExpressions": {
           "description": "matchExpressions is a list of label selector requirements. The requirements are ANDed.",
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "default": {},
-            "$ref": "#/$defs/k8s.apimachinery.pkg.apis.meta.v1.LabelSelectorRequirement"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/k8s.apimachinery.pkg.apis.meta.v1.LabelSelectorRequirement"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "x-kubernetes-list-type": "atomic"
         },
         "matchLabels": {
           "description": "matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed.",
-          "type": "object",
+          "type": [
+            "object",
+            "null"
+          ],
           "additionalProperties": {
             "type": "string",
             "default": ""
@@ -752,17 +1220,26 @@
       "properties": {
         "key": {
           "description": "key is the label key that the selector applies to.",
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "default": ""
         },
         "operator": {
           "description": "operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.",
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "default": ""
         },
         "values": {
           "description": "values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.",
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string",
             "default": ""
@@ -947,29 +1424,6 @@
       "description": "Time is a wrapper around time.Time which supports correct marshaling to YAML and JSON.  Wrappers are provided for many of the factory methods that the time package offers.",
       "type": "string",
       "format": "date-time"
-    }
-  },
-  "type": "object",
-  "properties": {
-    "apiVersion": {
-      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-      "type": "string"
-    },
-    "kind": {
-      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-      "type": "string"
-    },
-    "metadata": {
-      "default": {},
-      "$ref": "#/$defs/k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
-    },
-    "spec": {
-      "default": {},
-      "$ref": "#/$defs/ContainerProfileSpec"
-    },
-    "status": {
-      "default": {},
-      "$ref": "#/$defs/ContainerProfileStatus"
     }
   }
 }
