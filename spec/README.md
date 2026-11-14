@@ -2,15 +2,15 @@
 
 | file | chapter |
 |---|---|
-| `sbob-v0.0.4.md` | the published text, seed, verbatim |
-| `00-introduction-and-conformance.md` | purpose, conformance language, NULL versus NONE |
-| `01-document.md` | the behaviour document and its identity |
+| `00-introduction-and-conformance.md` | purpose, terms, conformance language and classes, NULL versus NONE, versions |
+| `01-document.md` | the behaviour document, its legacy form and its identity |
 | `02-grammar.md` | tokens and matching |
 | `03-collapse.md` | generalization of learned documents |
-| `04-compose.md` | fragments, stacking, subtract |
-| `05-trust.md` | bundle manifest, trust policy, verdicts |
-| `06-rules.md` | rule catalogue and evaluation |
-| `07-portability.md` | other engines |
-| `appendix-a-regex.md` | regex rendering |
+| `04-compose.md` | fragments, stacking, subtract, projection |
+| `05-trust.md` | bundle manifest, signed fragments, verdicts, trust policy (draft) |
+| `06-rules.md` | rule model, profile functions, rule catalogue, deny-all |
+| `07-portability.md` | fidelity classes and other engines |
+| `appendix-a-regex.md` | regular-expression rendering |
+| `sbob-v0.0.4.md` | the published text of version 0.0.4, kept as the seed, verbatim |
 
-Each chapter states its scope and the vector sets that pin it. Vector sets are named here and held in the harness; they are not part of this repository.
+Normative statements are numbered clauses. Each chapter ends with its conformance requirements, its open points and its changes from v0.0.4. Examples marked `example:<kind>` hold for the reference implementation.
