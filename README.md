@@ -68,3 +68,9 @@ flowchart LR
 
 Rules are not translated from their CEL text: another engine receives the document compiled into its own data plus a fixed template per rule (7.3), and a rule whose class has not been checked against the reference engine is reported, not emitted.
 
+## Roadmap
+
+Conformance with the OpenTelemetry specification is a goal. A chapter on it is on the roadmap: the rules of chapter 6, today written against the event fields and rule identifiers of the Kubescape node-agent (`R0001` and the others), are to become semantic rules, named and described in the terms of the OpenTelemetry semantic conventions, so that every tool reports the same behaviour under the same name.
+
+That chapter is not being worked on yet. The current work finalizes the schema of the behaviour document itself, and proves that the transpilation (chapter 7) works, and how every tool in the ecosystem can use it.
+
