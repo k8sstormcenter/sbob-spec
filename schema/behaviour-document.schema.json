@@ -752,6 +752,10 @@
             "default": ""
           }
         },
+        "argsRegex": {
+          "type": "string",
+          "maxLength": 16384
+        },
         "argsRequired": {
           "type": [
             "boolean",

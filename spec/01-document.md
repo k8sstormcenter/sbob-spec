@@ -109,10 +109,11 @@ The behaviour sections sit directly under `spec`. A document with any per-contai
 | `args` | list of string | argument-vector pattern, the first element is the invoked name (2.3) |
 | `envs` | list of string | environment entries recorded with the execution |
 | `argsRequired` | boolean | legacy marker of an anchored argument vector, see Open points |
+| `argsRegex` | string | regular expression over the whole argument vector, in place of `args` (2.11) |
 
 **1.4.1** An exec entry MUST have a non-empty `path`.
 
-**1.4.2** An exec entry admits an execution when its `path` matches the executable path and its `args` match the argument vector (2.3). An entry without `args` admits only an execution without arguments (2.3.2).
+**1.4.2** An exec entry admits an execution when its `path` matches the executable path and its `args` match the argument vector (2.3). An entry without `args` and without `argsRegex` admits only an execution without arguments (2.3.2). An entry with `argsRegex` is matched by its expression (2.11).
 
 **1.4.3** Matching MUST NOT depend on `envs`.
 

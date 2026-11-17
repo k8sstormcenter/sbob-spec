@@ -408,7 +408,7 @@ A document section lists what is admitted (the allow section). The `subtract` se
 
 **2.9.3** For an executable path regardless of its arguments, an observation MUST be admitted when an allow entry's path matches the observed path and no subtract entry denies it by 2.9.4.
 
-**2.9.4** For an executable path, a subtract entry whose path matches the observed path MUST deny the observation when its vector is empty, or when its vector has exactly two elements, the second is the run-token and the first is empty, is the same executable name as the invoked name (2.4), or matches the invoked name as a path pattern (2.2). A subtract entry with any other vector MUST NOT deny the executable path; it denies only the executions its vector matches (2.9.2).
+**2.9.4** For an executable path, a subtract entry without an argument expression (2.11) whose path matches the observed path MUST deny the observation when its vector is empty, or when its vector has exactly two elements, the second is the run-token and the first is empty, is the same executable name as the invoked name (2.4), or matches the invoked name as a path pattern (2.2). A subtract entry with any other vector, or with an argument expression, MUST NOT deny the executable path; it denies only the executions its vector or expression matches (2.9.2, 2.11.9).
 
 **2.9.5** The invoked name of an observed execution MUST be its first argument when that is present and non-empty, and otherwise the last path element of the observed path.
 
@@ -502,15 +502,121 @@ ip:
   invalid: ["", "10.0.0.0/40", "300.1.1.1", "fe80::1%eth0", not-an-ip]
 ```
 
+## 2.11 Argument expressions
+
+An exec entry MAY carry `argsRegex`, a regular expression over the whole argument vector, in place of `args`. Expressions are written by authors. The subject and the semantics are those of an engine that evaluates the space-joined command line with an RE2 expression in POSIX mode, matched whole.
+
+**2.11.1** The subject of an argument expression MUST be the observed argument vector with its elements joined by one space (U+0020). The empty vector is the empty subject. Elements are joined unchanged: `[a b]` and `[a, b]` have the same subject, and `[a, ""]` has the subject `a ` with a trailing space.
+
+**2.11.2** An argument expression MUST match only when it matches the whole subject. Anchors, alternation and newlines inside the expression or the subject do not change this.
+
+**2.11.3** The syntax MUST be POSIX extended regular-expression syntax as RE2 accepts it in its POSIX mode. Perl classes (`\d`, `\s`, `\w`), word boundaries, groups that start with `(?`, non-greedy operators, back references, Unicode classes and `\A`, `\z`, `\Q` are not part of it; `a*?` is the optional repeat `(a*)?`. Inside an expression `^` and `$` match at line boundaries, `.` does not match a newline and a negated bracket expression does.
+
+**2.11.4** An expression MUST NOT be longer than 16384 bytes, and its repeat counts MUST NOT exceed 1000, nested repeats multiplied. An expression that does not parse on its own, that leaves the syntax of 2.11.3 or that exceeds these bounds is invalid.
+
+**2.11.5** An entry MUST NOT carry both `args` and `argsRegex`. An entry with `argsRegex` MUST be matched by its expression alone; `args` and `argsRequired` are ignored. An empty `argsRegex` is absent.
+
+**2.11.6** A validator MUST report an invalid expression (2.11.4) and an entry that carries both fields (2.11.5).
+
+**2.11.7** An allow entry whose expression is invalid MUST admit no execution. A subtract entry whose expression is invalid MUST deny every execution whose path its path matches (2.9.2) and MUST NOT deny an executable path (2.9.4).
+
+**2.11.8** An allow entry with an expression MUST admit an execution when its path matches the observed path (2.2) and its expression matches the subject. Entries with expressions on a path place no constraint beyond their own: an execution that neither they nor another entry match is not admitted.
+
+**2.11.9** A subtract entry with an expression MUST deny an execution when its path matches the observed path and its expression matches the subject (2.9.2). It MUST NOT deny an executable path (2.9.4).
+
+**2.11.10** For an executable path regardless of its arguments (2.9.3), an allow entry with an expression MUST admit the path for every invoked name; the invoked name is the first element of the subject.
+
+**2.11.11** Merging (chapter 4) and collapsing (chapter 3) MUST carry an expression unchanged, and two entries that differ only in their expression are distinct. A producer that learns from observations MUST NOT write `argsRegex`: observed arguments are literal (2.3.3) whatever characters they contain.
+
+**2.11.12** A matcher MUST evaluate an expression in time linear in the length of the subject.
+
+```yaml example:argsregex
+regex: redis-server --port [0-9]+
+match: [[redis-server, --port, "6379"]]
+nomatch: [[redis-server, --port, "6379", --daemonize, "yes"], [xredis-server, --port, "6379"], [redis-server, --port, 63a9], [redis-server, --port]]
+```
+
+```yaml example:argsregex
+regex: redis-server --port=[0-9]+( --bind=[0-9.]+)?
+match: [[redis-server, --port=6379], [redis-server, --port=6379, --bind=10.0.0.7]]
+nomatch: [[redis-server, "--port=6379;id"]]
+```
+
+```yaml example:argsregex
+regex: a|b
+match: [[a], [b]]
+nomatch: [[ab], [xa], [bx]]
+```
+
+```yaml example:argsregex
+regex: "redis-server --port [0-9]+"
+match: []
+nomatch: [[sh, -c, "id\nredis-server --port 1"]]
+```
+
+```yaml example:argsregex
+regex: "sh -c [^;]*"
+match: [[sh, -c, "id\nwhoami"]]
+nomatch: [[sh, -c, "id;whoami"]]
+```
+
+```yaml example:argsregex
+regex: "a "
+match: [[a, ""], ["a "]]
+nomatch: [[a]]
+```
+
+```yaml example:argsregex
+regex: ".*"
+match: [[], [x, y]]
+nomatch: []
+```
+
+```yaml example:argsregex
+invalid: ["a)|(b", "\\d+", "(?:a)", "(?i)a", "(a)\\1", "a{1001}", "(a{11}){100}"]
+```
+
+```yaml example:subtract
+surface: exec
+allow: [{path: /usr/local/bin/redis-server, args: [redis-server, ⋯⋯]}]
+subtract: [{path: /usr/local/bin/redis-server, argsRegex: "redis-server --port 0"}]
+admitted: [{path: /usr/local/bin/redis-server, args: [redis-server, --port, "1"]}]
+denied: [{path: /usr/local/bin/redis-server, args: [redis-server, --port, "0"]}]
+```
+
+```yaml example:subtract
+surface: exec_path
+allow: [{path: /usr/local/bin/redis-server, args: [redis-server, ⋯⋯]}]
+subtract: [{path: /usr/local/bin/redis-server, argsRegex: "redis-server --port 0"}]
+admitted: [{path: /usr/local/bin/redis-server, args: [redis-server, --port, "0"]}]
+denied: []
+```
+
+```yaml example:subtract
+surface: exec
+allow: [{path: /usr/local/bin/redis-server, argsRegex: "redis-server --port [0-9]+"}]
+subtract: []
+admitted: [{path: /usr/local/bin/redis-server, args: [redis-server, --port, "6379"]}]
+denied: [{path: /usr/local/bin/redis-server, args: [redis-server, --evil]}, {path: /usr/local/bin/redis-server, args: []}]
+```
+
+```yaml example:subtract
+surface: exec
+allow: [{path: /usr/local/bin/redis-server, args: [redis-server, ⋯⋯]}]
+subtract: [{path: /usr/local/bin/redis-server, argsRegex: "("}]
+admitted: []
+denied: [{path: /usr/local/bin/redis-server, args: [redis-server]}, {path: /usr/local/bin/redis-server, args: [redis-server, --port, "1"]}]
+```
+
 ## Conformance
 
 A matcher conforms to this chapter when it:
 
 1. gives the outcome stated for every example marked `example:` in this chapter;
-2. agrees with the reference library on the conformance corpus of paths, argument vectors, executable names, sentinels and subtract cases whose digest the library publishes as its corpus version;
-3. evaluates the adversarial patterns of 2.2.11 and 2.3.9 within polynomial time.
+2. agrees with the reference library on the conformance corpus of paths, argument vectors, argument expressions, executable names, sentinels and subtract cases whose digest the library publishes as its corpus version;
+3. evaluates the adversarial patterns of 2.2.11 and 2.3.9 within polynomial time, and argument expressions in linear time (2.11.12).
 
-A validator conforms when it reports every entry of the `dead` and `invalid` lists in the examples of 2.10 and none of the `live` and `valid` ones.
+A validator conforms when it reports every entry of the `dead` and `invalid` lists in the examples of 2.10 and 2.11 and none of the `live` and `valid` ones.
 
 ## Open points
 
@@ -530,3 +636,4 @@ A validator conforms when it reports every entry of the `dead` and `invalid` lis
 - §5.8 did not state case-insensitivity; names are compared in lower case (2.6.1).
 - The subtract section and its evaluation (2.9) are new.
 - The definition of unmatchable entries (2.10.1) is new.
+- Argument expressions (2.11) are new.
