@@ -833,6 +833,13 @@
             "type": "string",
             "default": ""
           }
+        },
+        "extensions": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "wire-level intent of the entry (1.4.14); keys are registered in conventions.yaml"
         }
       },
       "description": "An endpoint entry (1.4)."
@@ -971,6 +978,13 @@
             "null"
           ],
           "default": ""
+        },
+        "extensions": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "wire-level intent of the entry (1.4.14); keys are registered in conventions.yaml"
         }
       },
       "description": "A network entry of ingress or egress (1.4)."
