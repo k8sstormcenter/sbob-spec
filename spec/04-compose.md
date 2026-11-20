@@ -66,6 +66,8 @@ Combining takes the fragments in stack order and produces one document. "Later" 
 
 **4.3.17** An observation MUST be admitted by the combined document exactly when the union of the fragments' allow sections admits it and the union of their subtract sections does not deny it (2.9), whatever the order of the fragments. A subtract entry in any fragment withdraws a matching allow entry of any other fragment.
 
+**4.3.18** When two endpoint entries are equal except for `extensions` (4.3.5), or a network entry replaces an earlier one with the same identifier (4.3.6), their `extensions` MUST be combined key by key: a key present on one side is kept; a key present on both with values equal as compact JSON is kept once; a key present on both with different values MUST make the composition fail, naming the entry and the key. A composition MUST NOT drop such a key or keep only one of the values.
+
 ```yaml example:merge
 fragments:
 - class: overlay

@@ -141,6 +141,7 @@ The behaviour sections sit directly under `spec`. A document with any per-contai
 | `internal` | boolean | the peer is inside the cluster |
 | `direction` | string | `inbound` or `outbound` |
 | `headers` | object | header name to list of values |
+| `extensions` | object | wire-level intent of the entry, see 1.4.14 |
 
 **1.4.6** `direction` MUST be `inbound` or `outbound` when present.
 
@@ -167,6 +168,7 @@ The behaviour sections sit directly under `spec`. A document with any per-contai
 | `serviceRefName` | string | name of a referenced service |
 | `serviceSelector` | label selector | a selector of services |
 | `entity` | string | a named peer class, see Open points |
+| `extensions` | object | wire-level intent of the entry, see 1.4.14 |
 
 <!-- fields: NetworkPort -->
 
@@ -213,6 +215,14 @@ The behaviour sections sit directly under `spec`. A document with any per-contai
 **1.4.12** `containerAllowed: false` MUST have the same meaning as an absent `containerAllowed`.
 
 **1.4.13** A policy for a rule the engine does not honour MUST have no effect and MUST NOT be treated as a denial.
+
+#### Extensions
+
+Endpoint and network entries, at the top level, in container sections and in `subtract`, MAY carry `extensions`. Its keys describe wire-level intent (protocol, peer, requirements, TLS parameters); their registry is `conventions/conventions.yaml`.
+
+**1.4.14** `extensions` MUST be a JSON object. A consumer that does not evaluate it MUST keep it and write it back unchanged (1.9.1).
+
+**1.4.15** `extensions` MUST NOT change how a consumer that does not evaluate it matches the entry: two entries that differ only in `extensions` describe the same behaviour.
 
 ```yaml
 spec:
