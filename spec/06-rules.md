@@ -225,7 +225,7 @@ An engine can discard observations before its rules evaluate them, for example w
 
 **6.10.1** An engine that discards an observation before every rule has evaluated it MUST count the discarded observation, per reason and per event kind.
 
-**6.10.2** While observations are discarded, an engine MUST report the loss in its alert stream at least once per reporting interval of at most 60 seconds. The report MUST carry the start and end of the interval, the count per reason and event kind, and the total.
+**6.10.2** While observations are discarded, an engine MUST report the loss in its alert stream at least once per reporting interval of at most 60 seconds. Each report MUST carry an identifier of the loss episode that is the same in every report of that episode, the start of the episode, the end of the reporting interval, the counts per reason and event kind accumulated since the start of the episode, and the count of the last reporting interval.
 
 **6.10.3** After the first reporting interval without loss, an engine MUST report once that the loss ended, with the start and end of the whole episode and its total.
 
