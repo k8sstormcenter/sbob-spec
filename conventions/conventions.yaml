@@ -343,6 +343,7 @@ rule_functions:
   - cp.was_path_opened_with_flags
   - cp.was_path_opened_with_prefix
   - cp.was_path_opened_with_suffix
+  - cp.was_path_opened_with_suffix_by
   - cp.was_selector_in_egress
   - cp.was_selector_in_ingress
   - cp.was_syscall_used

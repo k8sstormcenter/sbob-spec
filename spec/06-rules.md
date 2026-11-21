@@ -63,6 +63,7 @@ A profile function answers whether the document that governs the container `cont
 | `cp.was_path_opened_by` | 3 | the file path is admitted for the given executable (6.3.17) |
 | `cp.was_path_opened_with_prefix` | 2 | an admitted open entry's path starts with the given string (6.3.5) |
 | `cp.was_path_opened_with_suffix` | 2 | an admitted open entry's path ends with the given string (6.3.5) |
+| `cp.was_path_opened_with_suffix_by` | 3 | an admitted open entry's path ends with the given string and the entry admits the given executable (6.3.19) |
 | `cp.was_syscall_used` | 2 | the system call is admitted (2.8.1, 2.9.8) |
 | `cp.was_capability_used` | 2 | the capability is admitted (2.8.1, 2.9.8) |
 | `cp.was_endpoint_accessed` | 2 | the endpoint is admitted (6.3.6) |
@@ -125,6 +126,8 @@ A profile function answers whether the document that governs the container `cont
 **6.3.17** `cp.was_path_opened_by` MUST answer true when an allow open entry admits the path and the executable (1.4.16) and no subtract open entry denies them (2.9.9).
 
 **6.3.18** The other open functions of the table MUST NOT read `processes`: an allow open entry counts for them whatever its processes, and a subtract open entry with `processes` MUST NOT deny for them.
+
+**6.3.19** `cp.was_path_opened_with_suffix_by` MUST answer true when an allow open entry whose path, as written, ends with the given string admits the executable (1.4.16), and no subtract open entry whose path ends with the string denies it for that executable (2.9.9).
 
 The selector rules follow the Kubernetes NetworkPolicy model for the default namespace (6.3.9) and differ from it in three points: an absent or empty pod selector admits no pod, where NetworkPolicy selects every pod; a namespace selector is read against the namespace name only (6.3.14); and an invalid selector admits nothing.
 
