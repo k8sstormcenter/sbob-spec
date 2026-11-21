@@ -219,9 +219,21 @@ A binding is an object of kind `RuntimeRuleAlertBinding` in the group `rules.sbo
 
 **6.9.1** A binding MUST name rules by the display `name` of the rule object.
 
+## 6.10 Event loss
+
+An engine can discard observations before its rules evaluate them, for example when its event queue is full. A discarded observation can hide a violation, so the loss itself has to reach the consumers of the alert stream.
+
+**6.10.1** An engine that discards an observation before every rule has evaluated it MUST count the discarded observation, per reason and per event kind.
+
+**6.10.2** While observations are discarded, an engine MUST report the loss in its alert stream at least once per reporting interval of at most 60 seconds. The report MUST carry the start and end of the interval, the count per reason and event kind, and the total.
+
+**6.10.3** After the first reporting interval without loss, an engine MUST report once that the loss ended, with the start and end of the whole episode and its total.
+
+**6.10.4** A verifier MUST NOT treat an interval covered by an event-loss report as observed in full (8.8.2).
+
 ## Conformance
 
-A rule engine conforms to this chapter when it offers the profile functions of 6.3 with their arity and meaning, evaluates allow and subtract together (6.3.2), uses the rule names of 6.5, applies the deny-all alert rule of 6.6 and the policies of 6.7, and honours context tags (6.8.1).
+A rule engine conforms to this chapter when it offers the profile functions of 6.3 with their arity and meaning, evaluates allow and subtract together (6.3.2), uses the rule names of 6.5, applies the deny-all alert rule of 6.6 and the policies of 6.7, honours context tags (6.8.1), and reports event loss (6.10).
 
 ## Open points
 
@@ -233,6 +245,7 @@ A rule engine conforms to this chapter when it offers the profile functions of 6
 - The reference rule `dns-answer-address` takes the joined answer addresses as its subject, so it alerts once per answer address set rather than once per address.
 - The fields `profileDependency`, `isTriggerAlert`, `supportPolicy`, `mitreTactic` and `mitreTechnique` of a rule object are carried; their meaning is not specified in this version.
 - The effect of a binding entry that names no rule of the rule set is not specified.
+- The event-loss report (6.10) has an engine identifier in the reference engine (R1019) but no generalized rule name in the registry of this version.
 - v0.0.4 keyed rule policies by generalized rule name. The reference implementations key them by engine identifier (6.7.1). Whether rule names become accepted keys is not decided.
 
 ## Changes from v0.0.4
@@ -240,5 +253,5 @@ A rule engine conforms to this chapter when it offers the profile functions of 6
 - §1.4 named 22 generalized rules; the catalogue names every rule of the reference rule set (6.5), new names marked proposed.
 - §1.4.1 and §1.4.2 compared four tools in columns; that comparison is replaced by chapter 7.
 - §4.8 keyed `rulePolicies` by generalized rule name; the implemented key is the engine identifier (6.7.1).
-- The profile functions (6.3), the deny-all projection (6.6), context tags (6.8) and bindings (6.9) are new.
+- The profile functions (6.3), the deny-all projection (6.6), context tags (6.8), bindings (6.9) and event-loss reporting (6.10) are new.
 - v0.0.4 said the network stanzas mirror NetworkPolicy; selector evaluation differs from it in the three points after 6.3.16.
