@@ -124,7 +124,7 @@ nomatch: [/tmp/x, /tmp/x/y]
 
 ## 2.3 Argument vectors
 
-Argument rules apply to `execs[].args`. The first element is the invoked name (argv0).
+Argument rules apply to `execs[].args`. The first element is the invoked name: the path the program was executed by, as the executing system call received it (often absolute, for example `/usr/local/bin/redis-server`), or the program's own first argument when the sensor did not observe the executing call itself and read the arguments from the started process. Both forms occur for the same program, and a producer records the form it observed.
 
 **2.3.1** An argument pattern MUST match an observed argument vector position by position, anchored at both ends.
 
@@ -148,6 +148,8 @@ Argument rules apply to `execs[].args`. The first element is the invoked name (a
 **2.3.8** A one-token or run-token that is only part of a segment of an argument (for example `--config=⋯` or `⋯:⋯`) is literal (2.1.3).
 
 **2.3.9** A matcher MUST evaluate argument patterns with several run-tokens without exponential backtracking.
+
+**2.3.10** The first element MUST be compared as recorded (2.4.3): `/usr/local/bin/redis-server` and `redis-server` are different first elements. An author who wants to admit both forms writes one vector for each, or one argument expression (2.11.13).
 
 ```yaml example:args
 pattern: [cargo, build, ⋯⋯]
@@ -210,6 +212,8 @@ nomatch: [[--build-arg, TAGS=release]]
 **2.4.2** An empty recorded or invoked name MUST NOT be the same executable name as any name.
 
 **2.4.3** Whole-vector matching (2.3) MUST compare the first argument like any other argument. The executable-name rule applies where this specification names it (2.9.4).
+
+**2.4.4** The executable-name rule MUST NOT be applied inside an argument expression (2.11). There the first element of the subject is the invoked name as observed (2.3).
 
 ```yaml example:execname
 recorded: /bin/sh
@@ -504,7 +508,7 @@ ip:
 
 ## 2.11 Argument expressions
 
-An exec entry MAY carry `argsRegex`, a regular expression over the whole argument vector, in place of `args`. Expressions are written by authors. The subject and the semantics are those of an engine that evaluates the space-joined command line with an RE2 expression in POSIX mode, matched whole.
+An exec entry MAY carry `argsRegex`, a regular expression over the whole argument vector, in place of `args`. Expressions are written by authors. Learned documents use the argument patterns of 2.3 (2.11.11); an argument expression is the author's form for what those patterns cannot state, such as flag values, alternatives and character classes. Where both forms can state a constraint, the pattern form is preferred: it is portable to engines that evaluate no regular expressions (chapter 7). The subject and the semantics are those of an engine that evaluates the space-joined command line with an RE2 expression in POSIX mode, matched whole.
 
 **2.11.1** The subject of an argument expression MUST be the observed argument vector with its elements joined by one space (U+0020). The empty vector is the empty subject. Elements are joined unchanged: `[a b]` and `[a, b]` have the same subject, and `[a, ""]` has the subject `a ` with a trailing space.
 
@@ -530,10 +534,24 @@ An exec entry MAY carry `argsRegex`, a regular expression over the whole argumen
 
 **2.11.12** A matcher MUST evaluate an expression in time linear in the length of the subject.
 
+**2.11.13** The first element of the subject is the invoked name as observed (2.3), bare or with its path. An expression that names the program SHOULD admit both forms, for example by beginning with `(.*/)?redis-server`. The entry's path still decides which executable the entry admits (2.11.8).
+
 ```yaml example:argsregex
 regex: redis-server --port [0-9]+
 match: [[redis-server, --port, "6379"]]
 nomatch: [[redis-server, --port, "6379", --daemonize, "yes"], [xredis-server, --port, "6379"], [redis-server, --port, 63a9], [redis-server, --port]]
+```
+
+```yaml example:argsregex
+regex: (.*/)?redis-server --port [0-9]+
+match: [[/usr/local/bin/redis-server, --port, "6379"], [redis-server, --port, "6379"]]
+nomatch: [[/usr/local/bin/xredis-server, --port, "6379"], [/usr/local/bin/redis-server, --port, "6379", --daemonize, "yes"]]
+```
+
+```yaml example:argsregex
+regex: redis-server --port [0-9]+
+match: [[redis-server, --port, "6379"]]
+nomatch: [[/usr/local/bin/redis-server, --port, "6379"]]
 ```
 
 ```yaml example:argsregex
@@ -637,3 +655,4 @@ A validator conforms when it reports every entry of the `dead` and `invalid` lis
 - The subtract section and its evaluation (2.9) are new.
 - The definition of unmatchable entries (2.10.1) is new.
 - Argument expressions (2.11) are new.
+- The invoked name is defined as the path the program was executed by, or its own first argument (2.3); it is compared as recorded (2.3.10), also inside an argument expression (2.4.4, 2.11.13).
