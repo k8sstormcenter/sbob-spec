@@ -1,3 +1,5 @@
+> Superseded by [sbob-v0.2.0.md](sbob-v0.2.0.md); kept as the seed text of version 0.0.4.
+
 <div class="spec-doc" markdown="1">
 
 
@@ -285,6 +287,8 @@ Two parallel lists the workload is permitted to exchange traffic with:
 Both lists carry entries of the same  shape (table below) and are evaluated by symmetric verifier paths.
 
 The two stanzas mirror the Kubernetes [NetworkPolicy](https://kubernetes.io/docs/concepts/services-networking/network-policies/) model as closely as the runtime view allows: the same two directions, the same `podSelector` / `namespaceSelector` / `ipBlock` peer vocabulary, and the same `ports[]` shape. An SBOB SHOULD be expressible as a NetworkPolicy and a NetworkPolicy SHOULD be expressible as the observed-intent half of an SBOB, so that a declared profile and an enforced policy can be diffed against one another. Where the two diverge, the divergence is stated: an SBOB additionally carries `dnsNames` (a query name the workload resolved, which NetworkPolicy cannot express) and records observed addresses rather than admission-time selectors.
+
+> Superseded on this point: selector evaluation differs from NetworkPolicy (an empty pod selector admits no pod, a namespace selector is read against the namespace name only, an invalid selector admits nothing); see 6.3.9 and 6.3.14 to 6.3.16.
 
 
 

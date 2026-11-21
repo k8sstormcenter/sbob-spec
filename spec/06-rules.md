@@ -81,12 +81,12 @@ A profile function answers whether the document that governs the container `cont
 | `cp.was_address_in_ingress` | 2 | the address is admitted by the ingress addresses (2.5) |
 | `cp.was_address_port_protocol_in_egress` | 4 | address, port and protocol are admitted by one egress entry (6.3.8) |
 | `cp.was_address_port_protocol_in_ingress` | 4 | address, port and protocol are admitted by one ingress entry (6.3.8) |
-| `cp.was_selector_in_egress` | 5 | a peer in the namespace with the pod labels, on the port and protocol, is admitted by an egress selector entry (6.3.9) |
-| `cp.was_selector_in_ingress` | 5 | the same for ingress (6.3.9) |
+| `cp.was_selector_in_egress` | 5 | a peer in the namespace with the pod labels, on the port and protocol, is admitted by an egress selector entry (6.3.9, 6.3.14 to 6.3.16) |
+| `cp.was_selector_in_ingress` | 5 | the same for ingress (6.3.9, 6.3.14 to 6.3.16) |
 | `cp.is_host_peer_egress` | 4 | address, port and protocol are in the egress host-peer set (6.3.10) |
 | `cp.is_host_peer_ingress` | 4 | address, port and protocol are in the ingress host-peer set (6.3.10) |
 | `cp.was_address_port_protocol_resolved_from_egress_domain` | 4 | the address was answered for an admitted egress name whose entry admits the port and protocol (6.3.11) |
-| `cp.was_address_resolved_from_egress_domain` | 2 | not specified in this version |
+| `cp.was_address_resolved_from_egress_domain` | 2 | the address was answered for an admitted egress name, whatever the port (6.3.13) |
 | `cp.is_dns_answer_in_egress` | 3 | every answer address lies in the address set of the name (6.3.12) |
 
 **6.3.1** An engine that offers a function of the table MUST give it the arity and the meaning of the table. A rule that calls a `cp.` function outside the table, or with another arity, is not applicable to any engine (chapter 7).
@@ -112,6 +112,16 @@ A profile function answers whether the document that governs the container `cont
 **6.3.11** `cp.was_address_port_protocol_resolved_from_egress_domain` MUST answer true when the engine has seen, for the container, a DNS answer that carried the address for a name that an egress entry with names admits, and that entry's port constraint admits the port key.
 
 **6.3.12** For `cp.is_dns_answer_in_egress`, the address set of a name MUST be the union of the address lists of the egress entries whose names admit it, after subtract. When one of those entries has no address list, or its address list holds the star, the name is unconstrained and the function MUST answer true. Otherwise the function MUST answer true exactly when every answer address lies in the address set (2.5).
+
+**6.3.13** `cp.was_address_resolved_from_egress_domain` MUST answer true when the engine has seen, for the container, a DNS answer that carried the address for a name that the egress names admit (2.6) and that no subtract entry's names deny. It places no port and no protocol constraint.
+
+**6.3.14** A namespace selector MUST be evaluated against a label set that holds the single label `kubernetes.io/metadata.name` with the name of the peer's namespace as its value. The other labels of the namespace MUST NOT be read. A namespace selector on any other key therefore admits no peer.
+
+**6.3.15** A pod selector MUST be evaluated as a label selector over the labels of the peer pod: every `matchLabels` pair and every `matchExpressions` requirement MUST hold. An entry that names a label whose value changes with a release of the peer stops admitting the peer once that value changes; what a learner records is governed by 1.13.2.
+
+**6.3.16** A peer that the engine cannot resolve to a pod in a namespace MUST NOT be admitted by any selector entry.
+
+The selector rules follow the Kubernetes NetworkPolicy model for the default namespace (6.3.9) and differ from it in three points: an absent or empty pod selector admits no pod, where NetworkPolicy selects every pod; a namespace selector is read against the namespace name only (6.3.14); and an invalid selector admits nothing.
 
 ## 6.4 Allow, then subtract
 
@@ -231,3 +241,4 @@ A rule engine conforms to this chapter when it offers the profile functions of 6
 - §1.4.1 and §1.4.2 compared four tools in columns; that comparison is replaced by chapter 7.
 - §4.8 keyed `rulePolicies` by generalized rule name; the implemented key is the engine identifier (6.7.1).
 - The profile functions (6.3), the deny-all projection (6.6), context tags (6.8) and bindings (6.9) are new.
+- v0.0.4 said the network stanzas mirror NetworkPolicy; selector evaluation differs from it in the three points after 6.3.16.

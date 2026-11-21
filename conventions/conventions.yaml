@@ -276,6 +276,42 @@ retired:
     reason: vendor backend
   - legacy: kubescape.io/artifact-type
     reason: vendor backend
+# Chapter 8 (draft): keys of the `extensions` object and the values they draw from.
+extensions:
+  endpoint_keys:
+    - key: protocol
+      meaning: application protocol of the exchange; absent means http
+    - key: peer
+      meaning: identifier of a network entry of the same section level
+    - key: requires
+      meaning: session properties the exchange must have
+    - key: data
+      meaning: data classes intended in request and response
+  network_keys:
+    - key: tls
+      meaning: transport security intended on connections with the peer
+  protocols: [http, grpc, websocket, pgsql, mysql, redis, kafka, dns]
+  requires_values:
+    - value: tls
+    - value: auth
+    - value: cleartext
+      only_in: subtract
+  data_classes:
+    pii: [pii.email, pii.phone, pii.name, pii.iban, pii.card, pii.national-id, pii.health]
+    secret: [secret.bearer, secret.jwt, secret.private-key, secret.cloud-key, secret.password, secret.token]
+    marker: [marker.canary]
+  peer_classes: [host, cluster, world, eu, eea]
+  verdict_statuses: [compliant, violated, not-observed, inconclusive]
+  inconclusive_reasons:
+    - sensor-gap
+    - result-truncated
+    - payload-not-decrypted
+    - protocol-not-decoded
+    - payload-truncated
+    - handshake-not-seen
+    - peer-class-unknown
+    - timeout
+    - error
 rule_functions:
   - cp.is_dns_answer_in_egress
   - cp.is_domain_in_egress

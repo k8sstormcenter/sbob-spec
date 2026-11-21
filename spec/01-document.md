@@ -141,6 +141,7 @@ The behaviour sections sit directly under `spec`. A document with any per-contai
 | `internal` | boolean | the peer is inside the cluster |
 | `direction` | string | `inbound` or `outbound` |
 | `headers` | object | header name to list of values |
+| `extensions` | object | wire-level intent of the entry, see 1.4.14 |
 
 **1.4.6** `direction` MUST be `inbound` or `outbound` when present.
 
@@ -167,6 +168,7 @@ The behaviour sections sit directly under `spec`. A document with any per-contai
 | `serviceRefName` | string | name of a referenced service |
 | `serviceSelector` | label selector | a selector of services |
 | `entity` | string | a named peer class, see Open points |
+| `extensions` | object | wire-level intent of the entry, see 1.4.14 |
 
 <!-- fields: NetworkPort -->
 
@@ -213,6 +215,14 @@ The behaviour sections sit directly under `spec`. A document with any per-contai
 **1.4.12** `containerAllowed: false` MUST have the same meaning as an absent `containerAllowed`.
 
 **1.4.13** A policy for a rule the engine does not honour MUST have no effect and MUST NOT be treated as a denial.
+
+#### Extensions
+
+Endpoint and network entries, at the top level, in container sections and in `subtract`, MAY carry `extensions`. Its keys describe wire-level intent (protocol, peer, requirements, TLS parameters); their registry is `conventions/conventions.yaml`.
+
+**1.4.14** `extensions` MUST be a JSON object. A consumer that does not evaluate it MUST keep it and write it back unchanged (1.9.1).
+
+**1.4.15** `extensions` MUST NOT change how a consumer that does not evaluate it matches the entry: two entries that differ only in `extensions` describe the same behaviour.
 
 ```yaml
 spec:
@@ -451,6 +461,18 @@ cases:
 - {cluster: prod, namespace: shop, kind: Pod, name: Web-Frontend, wlid: "wlid://cluster-prod/namespace-shop/pod-Web-Frontend"}
 ```
 
+## 1.13 Learned documents
+
+A learner observes a running container and writes a learned document for it. These clauses state what it records and under which name; how a learned document is generalized is chapter 3.
+
+**1.13.1** A learner MUST record a successful DNS lookup that no connection follows as an `egress[]` entry whose `dnsNames` hold the looked-up name and whose `ports` list holds one element without a port, so that the entry admits the name (2.6) and no port (2.7.3). Repeated lookups of one name MUST yield one entry. A learner MAY bound the number of such names per container; when it does, it MUST count the names it leaves out.
+
+**1.13.2** A learner that records a peer by pod selector MUST NOT copy into it the labels that change with a release, a revision or a run of the peer: `pod-template-hash`, `pod-template-generation`, `controller-revision-hash`, `statefulset.kubernetes.io/pod-name`, `apps.kubernetes.io/pod-index`, `app.kubernetes.io/version`, `helm.sh/chart`, `chart`, `skaffold.dev/run-id`, `controller-uid`, `batch.kubernetes.io/controller-uid`, `job-name`, `batch.kubernetes.io/job-name` and `service.istio.io/canonical-revision`. The label `version` MUST be kept, because workloads select on it.
+
+**1.13.3** A learner that finds processes by scanning the running processes of a container, rather than by observing their execution, MUST record such a process as an execution only when it was already running before the learner observed executions in that container and its executable differs from its parent's. A process that runs its parent's executable is a fork; its command line, which a process may rewrite, MUST NOT be recorded as an argument vector.
+
+**1.13.4** The subject of a learned document MUST be the workload subject of the container's pod owner (1.12), not of the pod. A restarted container and a new pod of the same owner revision therefore continue one learned document. A new revision of the owner (a new pod-template hash or controller revision) is a new subject.
+
 ## Conformance
 
 A document producer conforms to this chapter when every document it writes passes the validation of 1.1, 1.4.1, 1.4.4, 1.4.11 and 1.5.2 and of 2.10, uses only registry keys for meanings this specification defines, and computes names and identifiers as 1.10 and 1.12 state.
@@ -477,5 +499,5 @@ A consumer conforms when it reads both forms of 1.8, keeps unknown, absent, empt
 - §4.6 required `flags`; it is optional (1.4.2).
 - §4.7 required `ports[]`; it is optional and an absent list places no port constraint (2.7.2).
 - §4.4 described `headers` as a map of header name to value pattern; it is a map of header name to a list of values (1.4.7).
-- The subtract section (1.6), status and completion (1.7), the legacy mapping (1.8), the encoding rules (1.9), document names (1.10), binding (1.11) and identity (1.12) are new.
+- The subtract section (1.6), status and completion (1.7), the legacy mapping (1.8), the encoding rules (1.9), document names (1.10), binding (1.11), identity (1.12) and learned documents (1.13) are new.
 - The fields `syscalls`, `imageTag`, `seccompProfile`, `identifiedCallStacks`, `envs`, `argsRequired`, `internal`, `serviceRefNamespace`, `serviceRefName`, `serviceSelector` and `entity` were not described in v0.0.4.
