@@ -1,4 +1,4 @@
-> Superseded by [sbob-v0.2.3.md](sbob-v0.2.2.md); kept as the seed text of version 0.0.4.
+> Superseded by [sbob-v0.3.0.md](sbob-v0.3.0.md); kept as the seed text of version 0.0.4.
 
 <div class="spec-doc" markdown="1">
 

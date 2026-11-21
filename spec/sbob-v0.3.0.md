@@ -2,11 +2,11 @@
 
 <dl class="status">
   <dt>Document</dt><dd>Software Bill of Behavior</dd>
-  <dt>Version</dt><dd>0.2.3</dd>
+  <dt>Version</dt><dd>0.3.0</dd>
   <dt>Stage</dt><dd>Proposed</dd>
 </dl>
 
-This file is the text of version 0.2.3 in one document, generated from the chapters under `spec/`. The chapters are the source; change them, not this file.
+This file is the text of version 0.3.0 in one document, generated from the chapters under `spec/`. The chapters are the source; change them, not this file.
 
 ## Contents
 
@@ -167,7 +167,7 @@ An implementation claims conformance for one or more classes. Each class names t
 
 ## 0.6 Versions
 
-**0.6.1** This specification is versioned with semantic versions. The version of this text is `0.2.3`. The registry carries its own `spec_version`: the version of the text in which its keys and values last changed, `0.1.0`.
+**0.6.1** This specification is versioned with semantic versions. The version of this text is `0.3.0`. The registry carries its own `spec_version`: the version of the text in which its keys and values last changed, `0.1.0`.
 
 **0.6.2** A document SHOULD carry the version it conforms to in the annotation `sbob/spec-version` (1.2.5), and MAY carry the grammar version it was authored against in the label `sbob/matcher-version`.
 
@@ -340,10 +340,17 @@ The behaviour sections sit directly under `spec`. A document with any per-contai
 |---|---|---|
 | `path` | string | path pattern of the file (2.2) |
 | `flags` | list of string | open flags (`O_RDONLY`, `O_WRONLY`, `O_RDWR`, `O_CREAT`, `O_CLOEXEC`, ...) |
+| `processes` | list of string | path patterns of the executables that may open the file (2.2); absent: any process (1.4.16) |
 
 **1.4.4** An open entry MUST have a non-empty `path`.
 
 **1.4.5** The flags of all entries with the same `path` form one flag set for that path.
+
+**1.4.16** An open entry without `processes`, or with an empty `processes`, admits an open by any process. An open entry with `processes` admits an open only when the executable of the opening process matches one of its elements as a path pattern (2.2). The executable is the file that the opening process runs at the time of the open, as the kernel reports it; it is neither the process name nor the invoked name (2.9.5).
+
+**1.4.17** The processes of all entries with the same `path` form one process set for that path. When one of these entries has no `processes`, the set is any process.
+
+**1.4.18** An open entry with `processes` MUST NOT admit an open whose executable is unknown.
 
 #### Endpoint entries
 
@@ -687,6 +694,8 @@ A learner observes a running container and writes a learned document for it. The
 **1.13.3** A learner that finds processes by scanning the running processes of a container, rather than by observing their execution, MUST record such a process as an execution only when it was already running before the learner observed executions in that container and its executable differs from its parent's. A process that runs its parent's executable is a fork; its command line, which a process may rewrite, MUST NOT be recorded as an argument vector.
 
 **1.13.4** The subject of a learned document MUST be the workload subject of the container's pod owner (1.12), not of the pod. A restarted container and a new pod of the same owner revision therefore continue one learned document. A new revision of the owner (a new pod-template hash or controller revision) is a new subject.
+
+**1.13.5** A learner that records processes MUST record, for every observed open, the executable of the opening process in `processes` of the entry. An open whose executable is unknown MUST NOT be recorded in an entry without `processes`; the learner MAY report it.
 
 ## Conformance
 
@@ -1145,6 +1154,8 @@ A document section lists what is admitted (the allow section). The `subtract` se
 
 **2.9.8** For capabilities and syscalls, a subtract entry MUST deny an observation it admits by 2.8.1.
 
+**2.9.9** For a file path opened by an executable, a subtract open entry with `processes` MUST deny the observation when its path matches the observed path and one of its processes matches the executable (2.2). A subtract open entry without `processes` denies the path for every executable (2.9.6).
+
 ```yaml example:subtract
 surface: exec
 allow: [{path: /usr/bin/getent, args: [/usr/bin/getent, hosts, ⋯]}]
@@ -1210,6 +1221,8 @@ denied: [{name: scan.example.invalid.}]
 **2.10.3** A validator MUST reject an address entry that is empty or not one of the forms of 2.5.1, including an address with a zone and a CIDR block with an out-of-range prefix length.
 
 **2.10.4** A validator MUST reject a name entry that is empty, consists of a trailing `.` only, has an empty label, has a `**` label, or has a star label in a position other than the first or the last. The entry that is the star alone is valid.
+
+**2.10.5** A validator MUST report an empty element of `opens[].processes` as invalid, and an element whose last path element contains the one-token, the run-token or the star as an entry that admits every executable of its directory.
 
 ```yaml example:unmatchable
 paths:
@@ -1470,6 +1483,12 @@ The reference algorithm keeps one tree of path segments per collapse run. Every 
 **3.3.10** After the tree pass, the open set MUST be consolidated: a literal entry that a pattern entry matches (2.2) MUST be dropped and its flags united into the covering pattern with the longest path string (the lexically smaller on equal length); a pattern entry whose every match is matched by a broader pattern entry MUST be dropped and its flags united into the broader one. No stored open set carries an entry that another entry of the same set covers.
 
 **3.3.11** The reference algorithm accepts a set of pinned paths that are kept as they are and never folded. Its use is an open point.
+
+**3.3.12** The processes of input entries that collapse to the same path MUST be united as their flags are (3.3.9). An input entry without `processes` makes the result an entry without `processes`.
+
+**3.3.13** In the consolidation of 3.3.10, an entry MUST be dropped into a covering entry only when the covering entry admits every executable the dropped entry admits (1.4.16). Otherwise both entries MUST be kept.
+
+**3.3.14** The last path element of every element of `processes` MUST stay literal.
 
 ```yaml example:collapse-opens
 threshold: 2
@@ -1850,6 +1869,8 @@ A rule engine evaluates a section through its projection: one match set per fiel
 
 **4.5.10** A projection MUST NOT share mutable state with the document it was taken from: changing one never changes the other.
 
+**4.5.11** For every open path, the projection MUST keep the union of the processes of the entries with that path, or any process when one of them has no `processes` (1.4.17).
+
 ```yaml example:project
 spec:
   opens:
@@ -1881,6 +1902,8 @@ The residual of an observed section against a governing section is what the obse
 **4.6.3** The residual MUST contain every syscall and every capability of the observed section that is neither listed in the governing section nor in its subtract section.
 
 **4.6.4** The residual MUST NOT share mutable state with either input.
+
+**4.6.5** For 4.6.2, an allow open entry with `processes` matches an observed open entry only for the executables it admits (1.4.16). An observed open entry MUST be in the residual with the processes that no matching allow entry admits; an observed entry without `processes` matches only an allow entry without `processes`.
 
 ## Conformance
 
@@ -2070,6 +2093,7 @@ A profile function answers whether the document that governs the container `cont
 | `cp.was_executed_with_args` | 3 | the execution, path and argument vector, is admitted (2.9.2) |
 | `cp.was_path_opened` | 2 | the file path is admitted (2.9.6) |
 | `cp.was_path_opened_with_flags` | 3 | the file path is admitted with the given open flags (6.3.4) |
+| `cp.was_path_opened_by` | 3 | the file path is admitted for the given executable (6.3.17) |
 | `cp.was_path_opened_with_prefix` | 2 | an admitted open entry's path starts with the given string (6.3.5) |
 | `cp.was_path_opened_with_suffix` | 2 | an admitted open entry's path ends with the given string (6.3.5) |
 | `cp.was_syscall_used` | 2 | the system call is admitted (2.8.1, 2.9.8) |
@@ -2130,6 +2154,10 @@ A profile function answers whether the document that governs the container `cont
 **6.3.15** A pod selector MUST be evaluated as a label selector over the labels of the peer pod: every `matchLabels` pair and every `matchExpressions` requirement MUST hold. An entry that names a label whose value changes with a release of the peer stops admitting the peer once that value changes; what a learner records is governed by 1.13.2.
 
 **6.3.16** A peer that the engine cannot resolve to a pod in a namespace MUST NOT be admitted by any selector entry.
+
+**6.3.17** `cp.was_path_opened_by` MUST answer true when an allow open entry admits the path and the executable (1.4.16) and no subtract open entry denies them (2.9.9).
+
+**6.3.18** The other open functions of the table MUST NOT read `processes`: an allow open entry counts for them whatever its processes, and a subtract open entry with `processes` MUST NOT deny for them.
 
 The selector rules follow the Kubernetes NetworkPolicy model for the default namespace (6.3.9) and differ from it in three points: an absent or empty pod selector admits no pod, where NetworkPolicy selects every pod; a namespace selector is read against the namespace name only (6.3.14); and an invalid selector admits nothing.
 

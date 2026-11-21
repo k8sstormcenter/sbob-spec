@@ -71,6 +71,12 @@ The reference algorithm keeps one tree of path segments per collapse run. Every 
 
 **3.3.11** The reference algorithm accepts a set of pinned paths that are kept as they are and never folded. Its use is an open point.
 
+**3.3.12** The processes of input entries that collapse to the same path MUST be united as their flags are (3.3.9). An input entry without `processes` makes the result an entry without `processes`.
+
+**3.3.13** In the consolidation of 3.3.10, an entry MUST be dropped into a covering entry only when the covering entry admits every executable the dropped entry admits (1.4.16). Otherwise both entries MUST be kept.
+
+**3.3.14** The last path element of every element of `processes` MUST stay literal.
+
 ```yaml example:collapse-opens
 threshold: 2
 input: [/data/a/info, /data/b/info, /data/c/info]
