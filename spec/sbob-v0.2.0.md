@@ -1,3 +1,5 @@
+> Superseded by [sbob-v0.2.1.md](sbob-v0.2.1.md); kept as the text of version 0.2.0.
+
 <div class="spec-doc" markdown="1">
 
 <dl class="status">
