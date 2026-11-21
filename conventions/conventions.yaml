@@ -1,4 +1,4 @@
-spec_version: 0.1.0
+spec_version: 0.3.0
 prefix: sbob
 legacy_prefixes:
   - kubescape.io
@@ -339,6 +339,7 @@ rule_functions:
   - cp.was_host_accessed
   - cp.was_internal_endpoint_accessed
   - cp.was_path_opened
+  - cp.was_path_opened_by
   - cp.was_path_opened_with_flags
   - cp.was_path_opened_with_prefix
   - cp.was_path_opened_with_suffix
