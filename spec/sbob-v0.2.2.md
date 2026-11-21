@@ -1507,13 +1507,13 @@ output: [/etc/*]
 
 ## 3.4 Execs
 
-**3.4.1** Entries with `argsRequired: true` and entries without arguments MUST pass through unchanged; equal ones MUST be merged.
+**3.4.1** Entries with `argsRequired: true` and entries without arguments MUST pass through unchanged; equal ones MUST be merged. Direct interpreter invocations (3.4.9) MUST NOT go through 3.4.4 to 3.4.7: equal ones MUST be merged and an entry that another direct invocation of the same path covers MUST be absorbed (3.4.6), and none MUST be generalized.
 
 **3.4.2** The other entries MUST be grouped by `path`, and the threshold of each group is the threshold for its path (3.2.1).
 
 **3.4.3** Within a group, entries with the same argument vector MUST be merged and their `envs` united. Entries that another entry of the group covers MUST be absorbed before any generalization, so that a delta a stored document already admits never widens it.
 
-**3.4.4** When a group has more distinct first arguments (argv0) than the threshold, every literal argv0 MUST be replaced by its shape: argv0 values are split at `/` into segments, values with the same number of segments share one segment tree, and a segment position with more distinct values than the threshold becomes `⋯`. A shape that does not match its original argv0 MUST be replaced by `⋯`. When the shapes are still more than the threshold, every argv0 MUST become `⋯`. An argv0 that already contains `⋯` MUST be kept.
+**3.4.4** When a group has more distinct first arguments (argv0) than the threshold, every literal argv0 MUST be replaced by its shape: argv0 values are split at `/` into segments, values with the same number of segments share one segment tree, and a segment position with more distinct values than the threshold becomes `⋯`. A shape that does not match its original argv0 MUST be replaced by `⋯`. When the shapes are still more than the threshold, every argv0 MUST become `⋯`. An argv0 that already contains `⋯` MUST be kept. For a path that names an interpreter (3.4.9), a shape MUST only replace an argv0 when its last segment is literal and does not itself name an interpreter; otherwise the argv0 MUST be kept literal, and the replacement by `⋯` MUST NOT happen.
 
 **3.4.5** The remaining vectors without a run-token MUST be put in argument trees, one per pair of argv0 and vector length, one level per position. A node with more distinct children than the threshold, or with a `⋯` child and any other child, MUST have its children merged into one `⋯` child whose subtree is the union of theirs. Vectors of different lengths MUST NOT be merged.
 
@@ -1523,18 +1523,38 @@ output: [/etc/*]
 
 **3.4.8** The output MUST be ordered by path, then by argument vector, then entries without `argsRequired` before those with it, then by `envs`.
 
+**3.4.9** An interpreter name is `sh`, `bash`, `dash`, `ash`, `zsh`, `ksh`, `mksh`, `node`, `nodejs`, `awk`, `gawk`, `mawk`, `nawk`, or a name starting with `python`, `perl`, `ruby`, `php` or `lua`. A name is read from the last path element of argv0, and from the last path element of `path` when argv0's last element contains a token. `busybox` followed by an interpreter name, and the wrappers `env`, `nohup`, `nice`, `timeout`, `stdbuf` and `xargs` followed (after their own options and, for `env`, assignments) by an interpreter name, invoke that interpreter. An entry is a direct interpreter invocation when its argv0 invokes an interpreter, when its argv0 contains a token and its path names an interpreter, or when it carries a code operand (3.4.10).
+
+**3.4.10** A code operand is the argument that carries program text: for a shell, the first argument after the options when an option cluster contains `c` (`sh -c`, `bash -lc`, `sh -c -- …`); for `python*`, the argument after `-c`, or the rest of the cluster when text follows `c`; `-e` and `-E` for `perl*`; `-e` for `ruby*`; `-e`, `--eval`, `-p` and `--print` for `node`; `-r`, `-R`, `-B` and `-E` for `php*`; `-e` for `lua*`; for `awk`, the program operand unless `-f` is given. A script-file argument is not a code operand.
+
+**3.4.11** A producer MUST NOT write a token or a run-token in a code operand, and a collapse step MUST NOT create an entry whose tokens can stand for a code operand of a direct interpreter invocation, including `[argv0, ⋯⋯]` for an argv0 that names an interpreter. A `⋯` in a code operand admits any program.
+
 ```yaml example:collapse-execs
 threshold: 2
-path: /bin/sh
-input: [[sh, -c, a], [sh, -c, b], [sh, -c, c]]
-output: [[sh, -c, ⋯]]
+path: /usr/bin/grep
+input: [[grep, -e, a], [grep, -e, b], [grep, -e, c]]
+output: [[grep, -e, ⋯]]
+```
+
+```yaml example:collapse-execs
+threshold: 2
+path: /usr/bin/grep
+input: [[grep, -e, a], [grep, -x, b], [grep, -i, c], [grep, a], [grep, b], [grep, c]]
+output: [[grep, ⋯], [grep, ⋯, ⋯]]
 ```
 
 ```yaml example:collapse-execs
 threshold: 2
 path: /bin/sh
-input: [[sh, -c, a], [sh, -x, b], [sh, -e, c], [sh, a], [sh, b], [sh, c]]
-output: [[sh, ⋯], [sh, ⋯, ⋯]]
+input: [[sh, -c, a], [sh, -c, b], [sh, -c, c]]
+output: [[sh, -c, a], [sh, -c, b], [sh, -c, c]]
+```
+
+```yaml example:collapse-execs
+threshold: 2
+path: /usr/bin/python3.12
+input: [[python3, -W, ignore, -c, a], [python3, -W, ignore, -c, b], [python3, -W, ignore, -c, c]]
+output: [[python3, -W, ignore, -c, a], [python3, -W, ignore, -c, b], [python3, -W, ignore, -c, c]]
 ```
 
 ```yaml example:collapse-execs
