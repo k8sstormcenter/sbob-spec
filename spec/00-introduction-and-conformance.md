@@ -72,7 +72,7 @@ An implementation claims conformance for one or more classes. Each class names t
 
 ## 0.6 Versions
 
-**0.6.1** This specification is versioned with semantic versions. The version of this text is `0.2.2`. The registry carries its own `spec_version`: the version of the text in which its keys and values last changed, `0.1.0`.
+**0.6.1** This specification is versioned with semantic versions. The version of this text is `0.2.3`. The registry carries its own `spec_version`: the version of the text in which its keys and values last changed, `0.1.0`.
 
 **0.6.2** A document SHOULD carry the version it conforms to in the annotation `sbob/spec-version` (1.2.5), and MAY carry the grammar version it was authored against in the label `sbob/matcher-version`.
 
