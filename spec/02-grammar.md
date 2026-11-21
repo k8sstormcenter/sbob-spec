@@ -151,6 +151,8 @@ Argument rules apply to `execs[].args`. The first element is the invoked name: t
 
 **2.3.10** The first element MUST be compared as recorded (2.4.3): `/usr/local/bin/redis-server` and `redis-server` are different first elements. An author who wants to admit both forms writes one vector for each, or one argument expression (2.11.13).
 
+**2.3.11** A conforming engine MUST observe, as the first element of an executed vector, the pathname the executing call received, not the first argument the caller supplied: a process started with a different first argument is observed with the executed pathname first. A script started through its interpreter line is observed with the script's pathname as the first element and the interpreter as `path`; its further elements are the script's arguments. A vector read from a started process instead of the executing call (2.3) carries the process's own first argument.
+
 ```yaml example:args
 pattern: [cargo, build, ⋯⋯]
 match: [[cargo, build], [cargo, build, --release, -p, x]]
