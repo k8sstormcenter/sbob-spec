@@ -2,11 +2,11 @@
 
 <dl class="status">
   <dt>Document</dt><dd>Software Bill of Behavior</dd>
-  <dt>Version</dt><dd>0.2.1</dd>
+  <dt>Version</dt><dd>0.2.2</dd>
   <dt>Stage</dt><dd>Proposed</dd>
 </dl>
 
-This file is the text of version 0.2.1 in one document, generated from the chapters under `spec/`. The chapters are the source; change them, not this file.
+This file is the text of version 0.2.2 in one document, generated from the chapters under `spec/`. The chapters are the source; change them, not this file.
 
 ## Contents
 
@@ -59,6 +59,8 @@ This file is the text of version 0.2.1 in one document, generated from the chapt
 - The definition of unmatchable entries (2.10.1) is new.
 - Argument expressions (2.11) are new.
 - The invoked name is defined as the path the program was executed by, or its own first argument (2.3); it is compared as recorded (2.3.10), also inside an argument expression (2.4.4, 2.11.13).
+- In 0.2.2 the subject of an argument expression joins elements with U+0000 instead of a space, and a space in an expression denotes that boundary (2.11.1, 2.11.14), so a one-token rendered as `[^ ]*` can no longer span two arguments. Expressions written before v0.7.2 that use a literal space inside an argument must write it as \x20.
+- A learning producer may write an argument expression for an entry it generalized (2.11.11).
 
 ### 3. Collapse of learned documents
 
@@ -165,7 +167,7 @@ An implementation claims conformance for one or more classes. Each class names t
 
 ## 0.6 Versions
 
-**0.6.1** This specification is versioned with semantic versions. The version of this text is `0.2.1`. The registry carries its own `spec_version`: the version of the text in which its keys and values last changed, `0.1.0`.
+**0.6.1** This specification is versioned with semantic versions. The version of this text is `0.2.2`. The registry carries its own `spec_version`: the version of the text in which its keys and values last changed, `0.1.0`.
 
 **0.6.2** A document SHOULD carry the version it conforms to in the annotation `sbob/spec-version` (1.2.5), and MAY carry the grammar version it was authored against in the label `sbob/matcher-version`.
 
@@ -1227,9 +1229,9 @@ ip:
 
 ## 2.11 Argument expressions
 
-An exec entry MAY carry `argsRegex`, a regular expression over the whole argument vector, in place of `args`. Expressions are written by authors. Learned documents use the argument patterns of 2.3 (2.11.11); an argument expression is the author's form for what those patterns cannot state, such as flag values, alternatives and character classes. Where both forms can state a constraint, the pattern form is preferred: it is portable to engines that evaluate no regular expressions (chapter 7). The subject and the semantics are those of an engine that evaluates the space-joined command line with an RE2 expression in POSIX mode, matched whole.
+An exec entry MAY carry `argsRegex`, a regular expression over the whole argument vector, in place of `args`. Authors write expressions for what the argument patterns of 2.3 cannot state, such as flag values, alternatives and character classes, and a learning producer may write one for an entry it generalized (2.11.11). Where both forms can state a constraint, the pattern form is portable to engines that evaluate no regular expressions (chapter 7). The subject is the argument vector with a boundary character between its elements (2.11.1), and a space in an expression stands for that boundary (2.11.14); otherwise the semantics are those of an RE2 expression in POSIX mode, matched whole.
 
-**2.11.1** The subject of an argument expression MUST be the observed argument vector with its elements joined by one space (U+0020). The empty vector is the empty subject. Elements are joined unchanged: `[a b]` and `[a, b]` have the same subject, and `[a, ""]` has the subject `a ` with a trailing space.
+**2.11.1** The subject of an argument expression MUST be the observed argument vector with its elements joined by the boundary character U+0000. The empty vector is the empty subject. An element never contains U+0000, since arguments of an execution are C strings, so the subject determines the vector: `[a b]` and `[a, b]` have different subjects, and `[a, ""]` has the subject `a` followed by one boundary.
 
 **2.11.2** An argument expression MUST match only when it matches the whole subject. Anchors, alternation and newlines inside the expression or the subject do not change this.
 
@@ -1249,11 +1251,13 @@ An exec entry MAY carry `argsRegex`, a regular expression over the whole argumen
 
 **2.11.10** For an executable path regardless of its arguments (2.9.3), an allow entry with an expression MUST admit the path for every invoked name; the invoked name is the first element of the subject.
 
-**2.11.11** Merging (chapter 4) and collapsing (chapter 3) MUST carry an expression unchanged, and two entries that differ only in their expression are distinct. A producer that learns from observations MUST NOT write `argsRegex`: observed arguments are literal (2.3.3) whatever characters they contain.
+**2.11.11** Merging (chapter 4) and collapsing (chapter 3) MUST carry an expression unchanged, and two entries that differ only in their expression are distinct. A producer that learns from observations MUST write the argument pattern (2.3) for an entry whose arguments it did not generalize. For an entry whose pattern contains a one-token or a run-token it MAY write `argsRegex` instead, rendered from the pattern: literal text quoted, a space inside an argument written `\x20`, a one-token as `[^ ]*`, a run-token as a run of such arguments, elements separated by one space, and the first element as learned. It MUST keep the pattern when the rendered expression would not admit every observation the entry was learned from.
 
 **2.11.12** A matcher MUST evaluate an expression in time linear in the length of the subject.
 
-**2.11.13** The first element of the subject is the invoked name as observed (2.3), bare or with its path. An expression that names the program SHOULD admit both forms, for example by beginning with `(.*/)?redis-server`. The entry's path still decides which executable the entry admits (2.11.8).
+**2.11.13** The first element of the subject is the invoked name as observed (2.3), bare or with its path. An author who wants an expression to admit both forms can begin it with `(.*/)?redis-server`; a producer writes the first element as learned (2.11.11). The entry's path still decides which executable the entry admits (2.11.8).
+
+**2.11.14** In an expression, a space (U+0020) that is not preceded by a backslash MUST denote the boundary of 2.11.1, inside a bracket expression as well. A space inside an argument MUST be written `\x20`, `\ ` (backslash, space) or with a class such as `[[:space:]]`. A negated bracket expression that excludes the space, such as `[^ ]*`, therefore matches any run inside one argument, spaces included, and never the boundary. Expressions written before version 0.2.2 that use a literal space inside an argument must write it as `\x20`.
 
 ```yaml example:argsregex
 regex: redis-server --port [0-9]+
@@ -1299,8 +1303,20 @@ nomatch: [[sh, -c, "id;whoami"]]
 
 ```yaml example:argsregex
 regex: "a "
-match: [[a, ""], ["a "]]
-nomatch: [[a]]
+match: [[a, ""]]
+nomatch: [[a], ["a "]]
+```
+
+```yaml example:argsregex
+regex: 'a\x20'
+match: [["a "]]
+nomatch: [[a, ""], [a]]
+```
+
+```yaml example:argsregex
+regex: /usr/bin/chmod [^ ]* /data
+match: [[/usr/bin/chmod, "0700", /data], [/usr/bin/chmod, "a b", /data]]
+nomatch: [[/usr/bin/chmod, "0700 /data"], [/usr/bin/chmod, "0700", x, /data]]
 ```
 
 ```yaml example:argsregex
@@ -1375,6 +1391,8 @@ A validator conforms when it reports every entry of the `dead` and `invalid` lis
 - The definition of unmatchable entries (2.10.1) is new.
 - Argument expressions (2.11) are new.
 - The invoked name is defined as the path the program was executed by, or its own first argument (2.3); it is compared as recorded (2.3.10), also inside an argument expression (2.4.4, 2.11.13).
+- In 0.2.2 the subject of an argument expression joins elements with U+0000 instead of a space, and a space in an expression denotes that boundary (2.11.1, 2.11.14), so a one-token rendered as `[^ ]*` can no longer span two arguments. Expressions written before v0.7.2 that use a literal space inside an argument must write it as \x20.
+- A learning producer may write an argument expression for an entry it generalized (2.11.11).
 
 ---
 
