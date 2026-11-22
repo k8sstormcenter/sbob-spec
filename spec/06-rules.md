@@ -129,6 +129,8 @@ A profile function answers whether the document that governs the container `cont
 
 **6.3.19** `cp.was_path_opened_with_suffix_by` MUST answer true when an allow open entry whose path, as written, ends with the given string admits the executable (1.4.16), and no subtract open entry whose path ends with the string denies it for that executable (2.9.9).
 
+**6.3.20** For `cp.is_dns_answer_in_egress`, a subtract egress entry withdraws its addresses from the answers of a name only when it has no ports. A subtract egress entry with ports MUST NOT deny an answer, since a DNS answer carries no port. An entry whose ports list holds no port counts as an entry without ports.
+
 The selector rules follow the Kubernetes NetworkPolicy model for the default namespace (6.3.9) and differ from it in three points: an absent or empty pod selector admits no pod, where NetworkPolicy selects every pod; a namespace selector is read against the namespace name only (6.3.14); and an invalid selector admits nothing.
 
 ## 6.4 Allow, then subtract
