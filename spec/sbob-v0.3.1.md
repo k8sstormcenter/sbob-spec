@@ -2479,6 +2479,7 @@ Keys of `extensions` on an endpoint entry (1.4):
 |---|---|---|
 | `request` | list of string | data classes intended in the request |
 | `response` | list of string | data classes intended in the response |
+| `expect` | object | `request` and `response` lists of the classes the exchanges are expected to carry (8.6.5) |
 
 **8.2.1** `endpoint` keeps the form `:<port><resource>` and `methods` keeps its type. For `protocol: http` the
 resource is the request path and the methods are HTTP methods, as today. For every other protocol the resource and
@@ -2587,7 +2588,7 @@ The registry list `extensions.data_classes` names the classes. Names are dotted,
 
 | family | classes |
 |---|---|
-| `pii` | `pii.email`, `pii.phone`, `pii.name`, `pii.iban`, `pii.card`, `pii.national-id`, `pii.health` |
+| `pii` | `pii.email`, `pii.phone`, `pii.name`, `pii.iban`, `pii.card`, `pii.national-id`, `pii.health`, `pii.address`, `pii.birth-date` |
 | `secret` | `secret.bearer`, `secret.jwt`, `secret.private-key`, `secret.cloud-key`, `secret.password`, `secret.token` |
 | `marker` | `marker.canary` (a value planted by a test, 8.9) |
 
@@ -2601,6 +2602,33 @@ admitted by the list. The same holds for `data.response` and the response.
 `data`, or an absent `request`, places no constraint.
 
 **8.6.4** A verifier MUST report the class and the location of a finding and MUST NOT report the value.
+
+`pii.address` is a postal address or a part of one that places a person: a street with a number, or a postal code
+with a place. An IP address is not a data class.
+
+**8.6.5** `data.expect` states which classes the exchanges of an entry are expected to carry. `data.expect.request` lists classes
+expected in requests, `data.expect.response` in responses. Every class listed in `expect.request` MUST be admitted
+by `data.request`, and every class in `expect.response` by `data.response`; a document where one is not is invalid.
+
+```yaml
+data:
+  request: [pii.email, pii.name]
+  response: []
+  expect: {request: [pii.email]}
+```
+
+**8.6.6** For each expected class a verifier MUST report one status for the whole period the report covers, not
+per evaluation window:
+
+| status | meaning |
+|---|---|
+| `compliant` | at least one admitted exchange of the entry carried the class |
+| `not-observed` | the whole period was observed and no exchange of the entry took place |
+| `inconclusive` | exchanges of the entry took place and none was seen to carry the class |
+
+An expected class that was not seen MUST NOT be reported as `violated`. That a class did not appear in a period
+does not show that the entry never carries it. The reason is `expected-class-not-seen` when every exchange was read
+in full, and the reason of 8.8.4 when at least one was not.
 
 ## 8.7 Subtract
 
@@ -2643,7 +2671,7 @@ window. A `violated` finding stands on partial observation.
 
 **8.8.3** `inconclusive` MUST carry a reason from the registry list `extensions.inconclusive_reasons`: `sensor-gap`,
 `result-truncated`, `payload-not-decrypted`, `protocol-not-decoded`, `payload-truncated`, `handshake-not-seen`,
-`peer-class-unknown`, `timeout`, `error`.
+`peer-class-unknown`, `expected-class-not-seen`, `timeout`, `error`.
 
 **8.8.4** `data` on an exchange whose payload the verifier cannot read (encrypted and not decrypted, or cut before
 its end) is `inconclusive`, never `compliant`. `tls` and `requires: [tls]` do not need the payload and are judged
