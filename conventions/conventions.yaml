@@ -286,7 +286,7 @@ extensions:
     - key: requires
       meaning: session properties the exchange must have
     - key: data
-      meaning: data classes intended in request and response
+      meaning: data classes intended in request and response, and classes expected in them
   network_keys:
     - key: tls
       meaning: transport security intended on connections with the peer
@@ -297,7 +297,7 @@ extensions:
     - value: cleartext
       only_in: subtract
   data_classes:
-    pii: [pii.email, pii.phone, pii.name, pii.iban, pii.card, pii.national-id, pii.health]
+    pii: [pii.email, pii.phone, pii.name, pii.iban, pii.card, pii.national-id, pii.health, pii.address, pii.birth-date]
     secret: [secret.bearer, secret.jwt, secret.private-key, secret.cloud-key, secret.password, secret.token]
     marker: [marker.canary]
   peer_classes: [host, cluster, world, eu, eea]
@@ -310,6 +310,7 @@ extensions:
     - payload-truncated
     - handshake-not-seen
     - peer-class-unknown
+    - expected-class-not-seen
     - timeout
     - error
 rule_functions:
