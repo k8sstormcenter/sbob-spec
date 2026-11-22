@@ -198,6 +198,8 @@ A rule engine evaluates a section through its projection: one match set per fiel
 
 **4.5.10** A projection MUST NOT share mutable state with the document it was taken from: changing one never changes the other.
 
+**4.5.11** For every open path, the projection MUST keep the union of the processes of the entries with that path, or any process when one of them has no `processes` (1.4.17).
+
 ```yaml example:project
 spec:
   opens:
@@ -229,6 +231,8 @@ The residual of an observed section against a governing section is what the obse
 **4.6.3** The residual MUST contain every syscall and every capability of the observed section that is neither listed in the governing section nor in its subtract section.
 
 **4.6.4** The residual MUST NOT share mutable state with either input.
+
+**4.6.5** For 4.6.2, an allow open entry with `processes` matches an observed open entry only for the executables it admits (1.4.16). An observed open entry MUST be in the residual with the processes that no matching allow entry admits; an observed entry without `processes` matches only an allow entry without `processes`.
 
 ## Conformance
 

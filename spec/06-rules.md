@@ -60,8 +60,10 @@ A profile function answers whether the document that governs the container `cont
 | `cp.was_executed_with_args` | 3 | the execution, path and argument vector, is admitted (2.9.2) |
 | `cp.was_path_opened` | 2 | the file path is admitted (2.9.6) |
 | `cp.was_path_opened_with_flags` | 3 | the file path is admitted with the given open flags (6.3.4) |
+| `cp.was_path_opened_by` | 3 | the file path is admitted for the given executable (6.3.17) |
 | `cp.was_path_opened_with_prefix` | 2 | an admitted open entry's path starts with the given string (6.3.5) |
 | `cp.was_path_opened_with_suffix` | 2 | an admitted open entry's path ends with the given string (6.3.5) |
+| `cp.was_path_opened_with_suffix_by` | 3 | an admitted open entry's path ends with the given string and the entry admits the given executable (6.3.19) |
 | `cp.was_syscall_used` | 2 | the system call is admitted (2.8.1, 2.9.8) |
 | `cp.was_capability_used` | 2 | the capability is admitted (2.8.1, 2.9.8) |
 | `cp.was_endpoint_accessed` | 2 | the endpoint is admitted (6.3.6) |
@@ -120,6 +122,12 @@ A profile function answers whether the document that governs the container `cont
 **6.3.15** A pod selector MUST be evaluated as a label selector over the labels of the peer pod: every `matchLabels` pair and every `matchExpressions` requirement MUST hold. An entry that names a label whose value changes with a release of the peer stops admitting the peer once that value changes; what a learner records is governed by 1.13.2.
 
 **6.3.16** A peer that the engine cannot resolve to a pod in a namespace MUST NOT be admitted by any selector entry.
+
+**6.3.17** `cp.was_path_opened_by` MUST answer true when an allow open entry admits the path and the executable (1.4.16) and no subtract open entry denies them (2.9.9).
+
+**6.3.18** The other open functions of the table MUST NOT read `processes`: an allow open entry counts for them whatever its processes, and a subtract open entry with `processes` MUST NOT deny for them.
+
+**6.3.19** `cp.was_path_opened_with_suffix_by` MUST answer true when an allow open entry whose path, as written, ends with the given string admits the executable (1.4.16), and no subtract open entry whose path ends with the string denies it for that executable (2.9.9).
 
 The selector rules follow the Kubernetes NetworkPolicy model for the default namespace (6.3.9) and differ from it in three points: an absent or empty pod selector admits no pod, where NetworkPolicy selects every pod; a namespace selector is read against the namespace name only (6.3.14); and an invalid selector admits nothing.
 

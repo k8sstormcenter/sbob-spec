@@ -1032,6 +1032,16 @@
         "path": {
           "type": "string",
           "minLength": 1
+        },
+        "processes": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       },
       "description": "An open entry (1.4).",

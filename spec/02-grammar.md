@@ -424,6 +424,8 @@ A document section lists what is admitted (the allow section). The `subtract` se
 
 **2.9.8** For capabilities and syscalls, a subtract entry MUST deny an observation it admits by 2.8.1.
 
+**2.9.9** For a file path opened by an executable, a subtract open entry with `processes` MUST deny the observation when its path matches the observed path and one of its processes matches the executable (2.2). A subtract open entry without `processes` denies the path for every executable (2.9.6).
+
 ```yaml example:subtract
 surface: exec
 allow: [{path: /usr/bin/getent, args: [/usr/bin/getent, hosts, ⋯]}]
@@ -489,6 +491,8 @@ denied: [{name: scan.example.invalid.}]
 **2.10.3** A validator MUST reject an address entry that is empty or not one of the forms of 2.5.1, including an address with a zone and a CIDR block with an out-of-range prefix length.
 
 **2.10.4** A validator MUST reject a name entry that is empty, consists of a trailing `.` only, has an empty label, has a `**` label, or has a star label in a position other than the first or the last. The entry that is the star alone is valid.
+
+**2.10.5** A validator MUST report an empty element of `opens[].processes` as invalid, and an element whose last path element contains the one-token, the run-token or the star as an entry that admits every executable of its directory.
 
 ```yaml example:unmatchable
 paths:

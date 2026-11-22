@@ -125,10 +125,17 @@ The behaviour sections sit directly under `spec`. A document with any per-contai
 |---|---|---|
 | `path` | string | path pattern of the file (2.2) |
 | `flags` | list of string | open flags (`O_RDONLY`, `O_WRONLY`, `O_RDWR`, `O_CREAT`, `O_CLOEXEC`, ...) |
+| `processes` | list of string | path patterns of the executables that may open the file (2.2); absent: any process (1.4.16) |
 
 **1.4.4** An open entry MUST have a non-empty `path`.
 
 **1.4.5** The flags of all entries with the same `path` form one flag set for that path.
+
+**1.4.16** An open entry without `processes`, or with an empty `processes`, admits an open by any process. An open entry with `processes` admits an open only when the executable of the opening process matches one of its elements as a path pattern (2.2). The executable is the file that the opening process runs at the time of the open, as the kernel reports it; it is neither the process name nor the invoked name (2.9.5).
+
+**1.4.17** The processes of all entries with the same `path` form one process set for that path. When one of these entries has no `processes`, the set is any process.
+
+**1.4.18** An open entry with `processes` MUST NOT admit an open whose executable is unknown.
 
 #### Endpoint entries
 
@@ -472,6 +479,8 @@ A learner observes a running container and writes a learned document for it. The
 **1.13.3** A learner that finds processes by scanning the running processes of a container, rather than by observing their execution, MUST record such a process as an execution only when it was already running before the learner observed executions in that container and its executable differs from its parent's. A process that runs its parent's executable is a fork; its command line, which a process may rewrite, MUST NOT be recorded as an argument vector.
 
 **1.13.4** The subject of a learned document MUST be the workload subject of the container's pod owner (1.12), not of the pod. A restarted container and a new pod of the same owner revision therefore continue one learned document. A new revision of the owner (a new pod-template hash or controller revision) is a new subject.
+
+**1.13.5** A learner that records processes MUST record, for every observed open, the executable of the opening process in `processes` of the entry. An open whose executable is unknown MUST NOT be recorded in an entry without `processes`; the learner MAY report it.
 
 ## Conformance
 
