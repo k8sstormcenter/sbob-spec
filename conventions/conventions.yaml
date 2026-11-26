@@ -68,6 +68,9 @@ labels:
   - key: sbob/host-fragment-base
     legacy: kubescape.io/host-fragment-base
     meaning: reference to the base fragment of a host document
+  - key: sbob/host-fingerprint
+    legacy: kubescape.io/host-fingerprint
+    meaning: first 32 hex digits of the SHA-256 of a learned host fragment's canonical fingerprint parts; absent on the custom fragment
   - key: sbob/bundle
     legacy: signature.kubescape.io/bundle
     meaning: bundle a signed fragment belongs to
@@ -128,6 +131,9 @@ annotations:
   - key: sbob/spec-version
     legacy: sbob.io/spec-version
     meaning: specification version the document conforms to
+  - key: sbob/host-fingerprint-parts
+    legacy: kubescape.io/host-fingerprint-parts
+    meaning: compact JSON of the fields a learned host fragment was produced on (kernel - kernelRelease, kernelBuild, arch; packages - osID, osVersion, packageDB, arch; runtime - runtime, runtimeVersion, cni, cniVersion, arch)
   - key: sbob/status
     legacy: kubescape.io/status
     values_ref: status_values
