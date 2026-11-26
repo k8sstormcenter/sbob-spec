@@ -788,9 +788,9 @@ Path rules apply to `execs[].path` and `opens[].path`. A path is split into segm
 
 **2.2.9** A pattern that starts with `/` MUST match only observed paths that start with `/`.
 
-**2.2.10** A one-token or a star that is only part of a segment, and the run-token anywhere in a path, are literal (2.1.3).
+**2.2.10** A segment that contains the one-token, is not exactly the one-token and contains no run-token is a segment pattern. Each one-token in it MUST match one or more code points other than `/`. Its other characters are literal, and the pattern is anchored at both ends of the segment. A star that is only part of a segment, and the run-token anywhere in a path, are literal (2.1.3).
 
-**2.2.11** A matcher MUST evaluate patterns with several star segments without exponential backtracking.
+**2.2.11** A matcher MUST evaluate patterns with several star segments, and segment patterns with several one-tokens, without exponential backtracking.
 
 ```yaml example:path
 pattern: /etc/⋯
@@ -842,8 +842,38 @@ nomatch: [/var/log/App, /var/log//app]
 
 ```yaml example:path
 pattern: /tmp/x⋯
+match: [/tmp/xy, /tmp/xé]
+nomatch: [/tmp/x, /tmp/x/y]
+```
+
+```yaml example:path
+pattern: /var/lib/kubelet/pods/⋯/volumes/kubernetes.io~projected/kube-api-access-⋯/token
+match: [/var/lib/kubelet/pods/0a1b/volumes/kubernetes.io~projected/kube-api-access-7gn2x/token]
+nomatch: [/var/lib/kubelet/pods/0a1b/volumes/kubernetes.io~projected/kube-api-access-/token, /var/lib/kubelet/pods/0a1b/volumes/kubernetes.io~projected/my-kube-api-access-x/token]
+```
+
+```yaml example:path
+pattern: /sys/fs/cgroup/kubepods.slice/cri-containerd-⋯.scope
+match: [/sys/fs/cgroup/kubepods.slice/cri-containerd-0a1b.scope]
+nomatch: [/sys/fs/cgroup/kubepods.slice/cri-containerd-.scope, /sys/fs/cgroup/kubepods.slice/cri-containerd-0a1b.scopex, /sys/fs/cgroup/kubepods.slice/docker-0a1b.scope]
+```
+
+```yaml example:path
+pattern: /a/⋯-⋯
+match: [/a/x-y, /a/x-y-z]
+nomatch: [/a/x-, /a/-y]
+```
+
+```yaml example:path
+pattern: /tmp/a⋯⋯
 match: []
-nomatch: [/tmp/xy, /tmp/x]
+nomatch: [/tmp/ab]
+```
+
+```yaml example:path
+pattern: /tmp/*x
+match: [/tmp/*x]
+nomatch: [/tmp/ax]
 ```
 
 ```yaml example:path
@@ -870,12 +900,13 @@ Argument rules apply to `execs[].args`. The first element is the invoked name: t
 
 - a segment that is exactly the one-token matches exactly one segment;
 - a segment that is exactly the run-token matches one or more segments;
+- a segment pattern (2.2.10) matches one segment as in 2.2.10;
 - every other segment is literal;
 - without a run-token segment, the number of segments MUST be equal.
 
 **2.3.7** An embedded pattern with more than one run-token segment MUST match nothing.
 
-**2.3.8** A one-token or run-token that is only part of a segment of an argument (for example `--config=⋯` or `⋯:⋯`) is literal (2.1.3).
+**2.3.8** A run-token that is only part of a segment of an argument is literal (2.1.3). A one-token that is only part of a segment makes that segment a segment pattern (2.3.6), so `--config=⋯` admits `--config=a.yaml` and `⋯:⋯` admits `app:1.0`, but neither admits a value with a `/`.
 
 **2.3.9** A matcher MUST evaluate argument patterns with several run-tokens without exponential backtracking.
 
@@ -933,8 +964,20 @@ nomatch: [[x, a/1/b/2]]
 
 ```yaml example:args
 pattern: [--build-arg, TAGS=⋯]
-match: []
-nomatch: [[--build-arg, TAGS=release]]
+match: [[--build-arg, TAGS=release]]
+nomatch: [[--build-arg, TAGS=], [--build-arg, TAGS=a/b]]
+```
+
+```yaml example:args
+pattern: [--tag, ⋯:⋯]
+match: [[--tag, app:1.0], [--tag, a:b:c]]
+nomatch: [[--tag, ghcr.io/org/app:1.0], [--tag, app:]]
+```
+
+```yaml example:args
+pattern: [runc, --pid-file, /run/k8s.io/⋯/⋯.pid]
+match: [[runc, --pid-file, /run/k8s.io/0a1b/9f8e.pid]]
+nomatch: [[runc, --pid-file, /run/k8s.io/0a1b/.pid]]
 ```
 
 ## 2.4 Executable names
@@ -1226,11 +1269,11 @@ denied: [{name: scan.example.invalid.}]
 
 ```yaml example:unmatchable
 paths:
-  dead: [/var/log/app-⋯.log, /tmp/⋯⋯, /usr/lib/llvm-⋯/bin/clang]
-  live: [/var/log/⋯, /etc/*, "*", /plain/path]
+  dead: [/var/log/app-⋯⋯.log, /tmp/⋯⋯, /usr/lib/llvm⋯⋯/bin/clang]
+  live: [/var/log/⋯, /etc/*, "*", /plain/path, /var/log/app-⋯.log, /usr/lib/llvm-⋯/bin/clang]
 args:
-  dead: ["--config=⋯", "⋯:⋯", a/⋯⋯/b/⋯⋯]
-  live: [⋯, ⋯⋯, /srv/⋯/x, /srv/⋯⋯/x, "--literal=*"]
+  dead: ["--config=⋯⋯", a/⋯⋯/b/⋯⋯]
+  live: [⋯, ⋯⋯, /srv/⋯/x, /srv/⋯⋯/x, "--literal=*", "--config=⋯", "⋯:⋯"]
 ```
 
 ```yaml example:validate
@@ -2750,7 +2793,8 @@ The subject of a path expression is the observed path in canonical form: no empt
 | `*` as the last segment, after a `/` | `/.+` | one or more segments (2.2.5) |
 | `*` as a segment that is not the last | `(?:[^/]+/)*` in place of the segment and its following `/` | zero or more segments (2.2.6) |
 | a run of adjacent `*` segments | rendered as one `*` | 2.2.7 |
-| `⋯`, `⋯⋯` or `*` inside a segment, `⋯⋯` as a segment | escaped as literal characters | 2.2.10 |
+| a segment pattern (2.2.10) | its literal parts escaped, each `⋯` rendered as `[^/]+` | one or more code points per `⋯` (2.2.10) |
+| `⋯⋯` or `*` inside a segment, `⋯⋯` as a segment | escaped as literal characters | 2.2.10 |
 
 **A.1.1** A path pattern MUST render to one expression anchored with `^` and `$`.
 
@@ -2773,7 +2817,8 @@ cases:
 - {pattern: "*/x", regex: "^(?:[^/]+/)*x$", match: [x, a/b/x], nomatch: [a/y]}
 - {pattern: /var/log/, regex: "^/var/log$", match: [/var/log], nomatch: [/var/log/x]}
 - {pattern: /opt/x.y, regex: "^/opt/x\\.y$", match: [/opt/x.y], nomatch: [/opt/xzy]}
-- {pattern: /tmp/x⋯, regex: "^/tmp/x⋯$", match: [], nomatch: [/tmp/xy]}
+- {pattern: /tmp/x⋯, regex: "^/tmp/x[^/]+$", match: [/tmp/xy], nomatch: [/tmp/x, /tmp/x/y]}
+- {pattern: /run/⋯.pid, regex: "^/run/[^/]+\\.pid$", match: [/run/a.pid], nomatch: [/run/.pid]}
 - {pattern: /tmp/⋯⋯, regex: "^/tmp/⋯⋯$", match: [], nomatch: [/tmp/x]}
 ```
 
@@ -2792,6 +2837,7 @@ An argument vector renders to one expression over the observed arguments joined 
 | an embedded pattern (2.3.6) | its `/` segments rendered one by one and joined with `/` |
 | inside an embedded pattern, a segment that is exactly `⋯` | `[^/S]*` |
 | inside an embedded pattern, a segment that is exactly `⋯⋯` | `[^/S]*(?:/[^/S]*)*` |
+| inside an embedded pattern, a segment pattern (2.3.6) | its literal parts escaped, each `⋯` rendered as `[^/S]+` |
 | inside an embedded pattern, any other segment | escaped literally |
 
 **A.2.1** An argument pattern MUST render to one expression anchored with `^` and `$`, with S between consecutive arguments except where the table says otherwise.
@@ -2826,7 +2872,8 @@ cases:
 - {token: /srv/⋯/x, regex: "/srv/[^/ ]*/x"}
 - {token: /srv/⋯⋯/x, regex: "/srv/[^/ ]*(?:/[^/ ]*)*/x"}
 - {token: a*b, regex: "a\\*b"}
-- {token: "--x=⋯", regex: "--x=⋯"}
+- {token: "--x=⋯", regex: "--x=[^/ ]+"}
+- {token: "--x=⋯⋯", regex: "--x=⋯⋯"}
 ```
 
 ```yaml example:regex-token
