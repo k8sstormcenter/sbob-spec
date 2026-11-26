@@ -21,7 +21,8 @@ The subject of a path expression is the observed path in canonical form: no empt
 | `*` as the last segment, after a `/` | `/.+` | one or more segments (2.2.5) |
 | `*` as a segment that is not the last | `(?:[^/]+/)*` in place of the segment and its following `/` | zero or more segments (2.2.6) |
 | a run of adjacent `*` segments | rendered as one `*` | 2.2.7 |
-| `⋯`, `⋯⋯` or `*` inside a segment, `⋯⋯` as a segment | escaped as literal characters | 2.2.10 |
+| a segment pattern (2.2.10) | its literal parts escaped, each `⋯` rendered as `[^/]+` | one or more code points per `⋯` (2.2.10) |
+| `⋯⋯` or `*` inside a segment, `⋯⋯` as a segment | escaped as literal characters | 2.2.10 |
 
 **A.1.1** A path pattern MUST render to one expression anchored with `^` and `$`.
 
@@ -44,7 +45,8 @@ cases:
 - {pattern: "*/x", regex: "^(?:[^/]+/)*x$", match: [x, a/b/x], nomatch: [a/y]}
 - {pattern: /var/log/, regex: "^/var/log$", match: [/var/log], nomatch: [/var/log/x]}
 - {pattern: /opt/x.y, regex: "^/opt/x\\.y$", match: [/opt/x.y], nomatch: [/opt/xzy]}
-- {pattern: /tmp/x⋯, regex: "^/tmp/x⋯$", match: [], nomatch: [/tmp/xy]}
+- {pattern: /tmp/x⋯, regex: "^/tmp/x[^/]+$", match: [/tmp/xy], nomatch: [/tmp/x, /tmp/x/y]}
+- {pattern: /run/⋯.pid, regex: "^/run/[^/]+\\.pid$", match: [/run/a.pid], nomatch: [/run/.pid]}
 - {pattern: /tmp/⋯⋯, regex: "^/tmp/⋯⋯$", match: [], nomatch: [/tmp/x]}
 ```
 
@@ -63,6 +65,7 @@ An argument vector renders to one expression over the observed arguments joined 
 | an embedded pattern (2.3.6) | its `/` segments rendered one by one and joined with `/` |
 | inside an embedded pattern, a segment that is exactly `⋯` | `[^/S]*` |
 | inside an embedded pattern, a segment that is exactly `⋯⋯` | `[^/S]*(?:/[^/S]*)*` |
+| inside an embedded pattern, a segment pattern (2.3.6) | its literal parts escaped, each `⋯` rendered as `[^/S]+` |
 | inside an embedded pattern, any other segment | escaped literally |
 
 **A.2.1** An argument pattern MUST render to one expression anchored with `^` and `$`, with S between consecutive arguments except where the table says otherwise.
@@ -97,7 +100,8 @@ cases:
 - {token: /srv/⋯/x, regex: "/srv/[^/ ]*/x"}
 - {token: /srv/⋯⋯/x, regex: "/srv/[^/ ]*(?:/[^/ ]*)*/x"}
 - {token: a*b, regex: "a\\*b"}
-- {token: "--x=⋯", regex: "--x=⋯"}
+- {token: "--x=⋯", regex: "--x=[^/ ]+"}
+- {token: "--x=⋯⋯", regex: "--x=⋯⋯"}
 ```
 
 ```yaml example:regex-token
